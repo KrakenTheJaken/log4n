@@ -1,0 +1,3 @@
+[submodule "movies/themes/mana"]
+	path = movies/themes/mana
+	url = https://github.com/Livour/hugo-mana-theme.git
