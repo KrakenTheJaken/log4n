@@ -2,7 +2,7 @@ baseURL = 'https://log4n.com/movies/'
 languageCode = 'en-US'
 title = ""
 theme = "mana"
-publishDir = "/../movies"
+publishDir = "movies"
 
 # Theme configuration
 [params]
