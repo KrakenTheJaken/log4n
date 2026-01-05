@@ -1,0 +1,40 @@
+/* Custom variables for log4n Salmon look */
+:root {
+    /* Background: Pure dark to make the salmon pop */
+    --background: #1a1b26; 
+    
+    /* Primary Accent: Salmon */
+    /* Standard Salmon: #FA8072 | Light Salmon: #FFA07A */
+    --primary: #FA8072;
+    
+    /* Text color */
+    --foreground: #cad3f5;
+}
+
+/* Apply background */
+body {
+    background-color: var(--background) !important;
+    color: var(--foreground);
+}
+
+/* Link and Hover effects in Salmon */
+a {
+    color: var(--primary);
+    transition: opacity 0.2s ease;
+}
+
+a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+/* Styling the Hero Title (Cats!!!) in Salmon */
+.hero-title, h1, h2 {
+    color: var(--primary) !important;
+}
+
+/* If the theme uses standard Tailwind/Mana buttons */
+.btn-primary, .button {
+    background-color: var(--primary) !important;
+    color: #1a1b26 !important; /* Dark text on salmon button */
+}

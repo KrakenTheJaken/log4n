@@ -1,0 +1,27 @@
+{{ $image := .Params.image }}
+{{ if not $image }}
+  {{ $titleSlug := .Title | urlize }}
+  {{ $imageExtensions := slice ".png" ".jpg" ".jpeg" ".webp" }}
+  {{ range $imageExtensions }}
+    {{ $potentialImage := printf "/images/%s%s" $titleSlug . }}
+    {{ $staticPath := printf "static/images/%s%s" $titleSlug . }}
+    {{ if (fileExists $staticPath) }}
+      {{ $image = $potentialImage }}
+      {{ break }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+{{ if $image }}
+  <div class="post-image-single">
+    <img
+      src="{{ $image | relURL }}"
+      alt="{{ if .Description }}
+        {{ .Description }}
+      {{ else }}
+        {{ .Title }} - Featured image
+      {{ end }}"
+      loading="eager"
+      width="1200"
+      height="630">
+  </div>
+{{ end }}

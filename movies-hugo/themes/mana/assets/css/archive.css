@@ -1,0 +1,73 @@
+/* Archive Page */
+
+.archives-page {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.archives-header {
+  margin-bottom: var(--spacing-xl);
+}
+
+.archives-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--text-primary);
+}
+
+.archives-description {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.archive-year {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.archive-year-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-primary);
+}
+
+.archive-month {
+  margin-bottom: var(--spacing-lg);
+  margin-left: var(--spacing-lg);
+}
+
+.archive-month-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-secondary);
+}
+
+.archive-posts {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.archive-post-item {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+}
+
+.archive-date {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  min-width: 60px;
+}
+
+.archive-link {
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.archive-link:hover {
+  color: var(--accent-primary);
+}
