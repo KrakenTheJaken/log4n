@@ -1,6 +1,6 @@
-baseURL = '/movies/'
+baseURL = 'https://log4n.com/movies/'
 languageCode = 'en-US'
-title = ""
+title = "log4n"
 theme = "mana"
 publishDir = "movies"
 # might chnage this ^ it was changed to appease cloudfare
