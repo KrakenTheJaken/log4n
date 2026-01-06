@@ -1,4 +1,4 @@
-baseURL = 'https://log4n.com/blog/'
+baseURL = 'https://log4n.com/blog'
 languageCode = 'en-US'
 title = "Your Site Title"
 theme = "mana"
