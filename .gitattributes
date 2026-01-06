@@ -1,2 +1,2 @@
 # Treat everything as-is, don't change line endings
-* -text
+* text eol=lf
