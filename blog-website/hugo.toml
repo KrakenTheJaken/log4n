@@ -2,6 +2,7 @@ baseURL = 'https://example.com/'
 languageCode = 'en-US'
 title = "Your Site Title"
 theme = "mana"
+publishDir = "../blog"
 
 # Theme configuration
 [params]
@@ -142,3 +143,5 @@ weight = 40
   priority = 0.5
   filename = "sitemap.xml"
 
+[params]
+  minify = true
