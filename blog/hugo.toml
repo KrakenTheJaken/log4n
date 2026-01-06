@@ -2,6 +2,9 @@ baseURL = 'https://example.com/'
 languageCode = 'en-US'
 title = "Your Site Title"
 theme = "mana"
+publishDir = "../blog"
+relativeURLs = true
+canonifyURLs = true
 
 # Theme configuration
 [params]
