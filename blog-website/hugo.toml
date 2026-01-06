@@ -3,6 +3,8 @@ languageCode = 'en-US'
 title = "Your Site Title"
 theme = "mana"
 publishDir = "../blog"
+canonifyURLs = true
+relativeURLs = false
 
 # Theme configuration
 [params]
@@ -11,6 +13,7 @@ publishDir = "../blog"
   favicon = "/favicon/logo-transparent/favicon.ico"
   heroTitleLine1 = "YOUR SITE NAME"
   heroTitleLine2 = "YOUR TAGLINE"
+  minify = true
   
   # 404 Page Configuration
   # Custom message for the 404 error page (supports HTML)
@@ -143,5 +146,4 @@ weight = 40
   priority = 0.5
   filename = "sitemap.xml"
 
-[params]
-  minify = true
+
