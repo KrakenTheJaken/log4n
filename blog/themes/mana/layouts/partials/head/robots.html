@@ -1,0 +1,18 @@
+{{- /* Robots meta tag for SEO */ -}}
+{{- $robots := slice -}}
+{{- if .Params.noindex -}}
+  {{- $robots = $robots | append "noindex" -}}
+{{- end -}}
+{{- if .Params.nofollow -}}
+  {{- $robots = $robots | append "nofollow" -}}
+{{- end -}}
+{{- if .Params.noarchive -}}
+  {{- $robots = $robots | append "noarchive" -}}
+{{- end -}}
+{{- if .Params.nosnippet -}}
+  {{- $robots = $robots | append "nosnippet" -}}
+{{- end -}}
+{{- if eq (len $robots) 0 -}}
+  {{- $robots = $robots | append "index" "follow" -}}
+{{- end -}}
+<meta name="robots" content="{{ delimit $robots ", " }}">
