@@ -13,7 +13,7 @@ relativeURLs = false
   favicon = "/favicon/logo-transparent/favicon.ico"
   heroTitleLine1 = "YOUR SITE NAME"
   heroTitleLine2 = "YOUR TAGLINE"
-  minify = true
+  minify = false
   
   # 404 Page Configuration
   # Custom message for the 404 error page (supports HTML)
