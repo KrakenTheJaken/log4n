@@ -1,0 +1,18 @@
+{{ $resolved := partial "post-image-resolve.html" . }}
+{{ $image := $resolved.image }}
+{{ $imageResource := $resolved.imageResource }}
+
+{{ if $image }}
+  <div class="post-image-single">
+    <img
+      src="{{ if $imageResource }}{{ $imageResource.RelPermalink }}{{ else }}{{ $image | relURL }}{{ end }}"
+      alt="{{ if .Description }}
+        {{ .Description }}
+      {{ else }}
+        {{ .Title }} - Featured image
+      {{ end }}"
+      loading="eager"
+      width="1200"
+      height="630">
+  </div>
+{{ end }}

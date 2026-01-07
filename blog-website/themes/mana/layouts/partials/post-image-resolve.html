@@ -1,0 +1,50 @@
+{{/* 
+  Resolves post image from front matter, page resources, asset resources, or auto-discovery.
+  Returns a dictionary with 'image' (path string) and 'imageResource' (resource object).
+  
+  Resolution order:
+  1. Page resources (content folder) - via .Resources.Get
+  2. Asset resources (assets folder) - via resources.Get
+  3. Auto-discovery from static/images/ or assets/images/ based on post title
+*/}}
+{{ $image := .Params.image }}
+{{ $imageResource := false }}
+
+{{ if $image }}
+  {{/* Try to resolve as page resource first (content folder) */}}
+  {{ $imageResource = .Resources.Get $image }}
+  {{ if not $imageResource }}
+    {{ $imageResource = .Resources.GetMatch $image }}
+  {{ end }}
+  
+  {{/* If not found as page resource, try as asset resource (assets folder) */}}
+  {{ if not $imageResource }}
+    {{ $imageResource = resources.Get $image }}
+  {{ end }}
+{{ else }}
+  {{/* Auto-discovery: try to find image based on title */}}
+  {{ $titleSlug := .Title | urlize }}
+  {{ $imageExtensions := slice ".png" ".jpg" ".jpeg" ".webp" }}
+  {{ range $imageExtensions }}
+    {{ $potentialImage := printf "/images/%s%s" $titleSlug . }}
+    {{ $staticPath := printf "static/images/%s%s" $titleSlug . }}
+    {{ $assetPath := printf "assets/images/%s%s" $titleSlug . }}
+    
+    {{/* Check static folder first (files served directly) */}}
+    {{ if (fileExists $staticPath) }}
+      {{ $image = $potentialImage }}
+      {{/* Files in static/ are served directly, no resource needed */}}
+      {{ break }}
+    {{ end }}
+    
+    {{/* Check assets folder (processed as resources) */}}
+    {{ if (fileExists $assetPath) }}
+      {{ $image = $potentialImage }}
+      {{ $imageResource = resources.Get (printf "images/%s%s" $titleSlug .) }}
+      {{ break }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ return (dict "image" $image "imageResource" $imageResource) }}
+

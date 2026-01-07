@@ -1,0 +1,41 @@
+{{ $emojis := dict
+  "note" "ℹ️"
+  "tip" "💡"
+  "important" "❗"
+  "warning" "⚠️"
+  "caution" "⚠️"
+  "info" "ℹ️"
+  "success" "✅"
+  "question" "❓"
+  "danger" "🔴"
+  "bug" "🐛"
+  "example" "📝"
+}}
+
+{{ if eq .Type "alert" }}
+  {{ $alertId := printf "alert-%d" .Ordinal }}
+  {{ $isCollapsible := or (eq .AlertSign "+") (eq .AlertSign "-") }}
+  
+  <div class="alert alert-{{ .AlertType }}{{ if $isCollapsible }} alert-collapsible{{ end }}"{{ if $isCollapsible }} data-collapsed="{{ if eq .AlertSign "+" }}true{{ else }}false{{ end }}"{{ end }}>
+    <div class="alert-header"{{ if $isCollapsible }} style="cursor: pointer;"{{ end }}>
+      <span class="alert-icon">{{ index $emojis .AlertType }}</span>
+      <span class="alert-title">
+        {{ with .AlertTitle }}
+          {{ . }}
+        {{ else }}
+          {{ or (i18n .AlertType) (title .AlertType) }}
+        {{ end }}
+      </span>
+      {{ if $isCollapsible }}
+        <span class="alert-toggle" id="toggle-{{ $alertId }}">{{ if eq .AlertSign "+" }}+{{ else }}−{{ end }}</span>
+      {{ end }}
+    </div>
+    <div class="alert-content" id="{{ $alertId }}"{{ if and $isCollapsible (eq .AlertSign "+") }} style="display: none;"{{ end }}>
+      {{ .Text }}
+    </div>
+  </div>
+{{ else }}
+  <blockquote class="blockquote-regular">
+    {{ .Text }}
+  </blockquote>
+{{ end }}
