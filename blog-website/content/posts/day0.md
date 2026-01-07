@@ -3,7 +3,7 @@ date = '2026-01-04T18:13:43-05:00'
 draft = false
 title = 'Weekly Movie: Day 0'
 tags = ["Movies"]
-image = "/images/day0.png"
+image = "/images/day0.jpg"
 +++
 
 
