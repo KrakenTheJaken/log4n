@@ -1,2 +1,9 @@
-# Treat everything as-is, don't change line endings
-* text eol=lf
+# make texts have the propper eol...
+*.html text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.ts   text eol=lf
+*.jsx  text eol=lf
+*.tsx  text eol=lf
+*.md   text eol=lf
