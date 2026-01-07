@@ -17,7 +17,7 @@
     document.documentElement.setAttribute("data-theme", theme);
   })();
 </script>
-<title>Tags | log4n</title>
+<title>Posts | log4n</title>
 <meta
   name="description"
   content="
@@ -32,18 +32,18 @@
 
 
 
-<link rel="canonical" href="https://log4n.com/blog/tags/">
+<link rel="canonical" href="https://log4n.com/blog/posts/">
 
 <meta name="robots" content="index, follow">
 
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="Tags | log4n">
+<meta property="og:title" content="Posts | log4n">
 <meta property="og:description" content="">
-<meta property="og:url" content="https://log4n.com/blog/tags/">
+<meta property="og:url" content="https://log4n.com/blog/posts/">
 <meta property="og:site_name" content="log4n">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Tags | log4n">
+<meta name="twitter:title" content="Posts | log4n">
 <meta name="twitter:description" content="">
 
 
@@ -148,7 +148,7 @@
 <link rel="manifest" href="https://log4n.com/blog/favicon/logo-transparent/site.webmanifest">
 
 
-  <link rel="alternate" type="application/rss&#43;xml" href="https://log4n.com/blog/tags/index.xml">
+  <link rel="alternate" type="application/rss&#43;xml" href="https://log4n.com/blog/posts/index.xml">
 
 
 
@@ -186,7 +186,7 @@
     <li class="menu-item">
       <a
         href="https://log4n.com/blog/posts/"
-        class="menu-link ">
+        class="menu-link active">
         Posts
       </a>
     </li>
@@ -194,7 +194,7 @@
     <li class="menu-item">
       <a
         href="https://log4n.com/blog/tags/"
-        class="menu-link active">
+        class="menu-link ">
         Tags
       </a>
     </li>
@@ -247,48 +247,221 @@
 
     <main id="main-content" class="flex-1" role="main">
       
-  <div class="tags-page">
-    <h1 class="tags-title">
-      <span class="list-title-line2">TAGS</span>
-    </h1>
-
+  
+  
+  
     
-    <div class="tags-help">
-      <p>Click any tag to view related posts</p>
-    </div>
-
+      
+        
+      
     
-    <div class="tags-cloud">
-      <div class="tags-list">
-        
-          <a href="https://log4n.com/blog/tags/movies/" class="tag-item">
-            <div class="tag-chip-large">
-              <span class="tag-name">Movies</span>
-              <span class="tag-count-badge">1</span>
-            </div>
-          </a>
-        
+  
+  
+  
+  
+    
+    
+  
+  
+
+
+  <div class="list-container">
+    <header class="list-header">
+      <h1 class="list-title">
+        <span class="list-title-line2">POSTS</span>
+      </h1>
+      
+      <div class="list-count">
+        <span id="filtered-count">1</span>
+        post
       </div>
-    </div>
+    </header>
 
     
-    <div class="tags-back">
-      <a href="https://log4n.com/blog/" class="tags-back-link">
+    <div class="filter-accordion">
+      <button
+        class="filter-toggle-btn"
+        id="filter-toggle-btn"
+        aria-expanded="false"
+        aria-label="Toggle filters"
+        aria-controls="posts-filter-content">
+        <span class="filter-toggle-text">Filters</span>
         <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="back-icon"
+          class="filter-toggle-icon"
           fill="none"
+          stroke="currentColor"
           viewBox="0 0 24 24"
-          stroke="currentColor">
+          aria-hidden="true">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            d="M19 9l-7 7-7-7"></path>
         </svg>
-        Back to Home
-      </a>
+      </button>
+      <div class="posts-filter" id="posts-filter-content">
+        <div class="filter-group filter-group-tags">
+          <label class="filter-label" for="tag-search-input">Tags</label>
+          <div class="tag-search-container">
+            <input
+              type="text"
+              id="tag-search-input"
+              class="tag-search-input"
+              placeholder="Search for tags..."
+              aria-label="Search for tags">
+            <div
+              id="tag-search-results"
+              class="tag-search-results"
+              role="listbox"
+              aria-label="Tag search results"></div>
+          </div>
+          <div class="filter-tags" id="selected-tags-container">
+            
+          </div>
+          <div id="all-tags-data" style="display: none;">
+            
+              <span data-tag="Movies">Movies</span>
+            
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-year-month" class="filter-label">Year & Month</label>
+          <select
+            id="filter-year-month"
+            class="filter-select"
+            aria-label="Filter by year and month">
+            <option value="">All Dates</option>
+            
+              <option value="2026 January">2026 January</option>
+            
+          </select>
+        </div>
+
+        <button id="clear-filters" class="filter-clear-btn" aria-label="Clear all filters">
+          Clear Filters
+        </button>
+      </div>
     </div>
+
+    <div class="posts-list" id="posts-container">
+      
+        
+        
+          
+        
+        
+
+
+
+
+
+<article
+  class="post-card"
+  data-post-url="https://log4n.com/blog/posts/day0/"
+  data-year-month="2026 January"
+  data-tags="Movies">
+  
+
+
+
+
+  <div class="post-image">
+    <a href="https://log4n.com/blog/posts/day0/" onclick="event.stopPropagation();" aria-label="Read Weekly Movie: Day 0">
+      <img
+        src="https://log4n.com/blog/images/day0.png"
+        alt="
+          Weekly Movie: Day 0 - Featured image
+        "
+        loading="lazy"
+        width="1200"
+        height="630">
+    </a>
+  </div>
+
+
+
+
+  <div class="post-content">
+    <h3 class="post-title">
+      <a href="https://log4n.com/blog/posts/day0/" onclick="event.stopPropagation();">Weekly Movie: Day 0</a>
+    </h3>
+
+    
+      <p class="post-description"><p>this is more just to have a first post tbh&hellip; but ig ill explain what im gonna doooo and stuff</p>
+<h2 id="the-plan-3">the plan :3</h2>
+<h3 id="1-watch-a-new-movie-every-week">1. watch a new movie every week …</h3></p>
+    
+
+    <div class="post-meta-inline">
+  <time datetime="2026-01-04T18:13:43-05:00" class="post-date">
+    <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+    </svg>
+    January 4, 2026
+  </time>
+
+  
+    <span class="meta-separator">•</span>
+    <span class="post-word-count">
+      <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+      759 words
+    </span>
+  
+
+  
+    <span class="meta-separator">•</span>
+    <span class="post-reading-time">
+      <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      4 min
+    </span>
+  
+</div>
+
+
+    
+
+  <div class="post-tags">
+    
+      
+        <a
+          href="https://log4n.com/blog/tags/movies"
+          class="post-tag"
+          onclick="event.stopPropagation();"
+          >Movies</a
+        >
+      
+    
+  </div>
+
+
+  </div>
+</article>
+
+      
+    </div>
+
+    
+    <div class="tag-nav-links">
+  <a href="https://log4n.com/blog/" class="tag-nav-link">Back to Home</a>
+</div>
+
   </div>
 
     </main>
