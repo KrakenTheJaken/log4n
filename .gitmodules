@@ -1,6 +1,0 @@
-[submodule "themes/mana"]
-	path = themes/mana
-	url = https://github.com/Livour/hugo-mana-theme.git
-[submodule "blog-website/themes/mana"]
-	path = blog-website/themes/mana
-	url = https://github.com/Livour/hugo-mana-theme.git
