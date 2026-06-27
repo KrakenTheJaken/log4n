@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>city chain :: games</title>
+<style>
+  :root {
+    --salmon: #FA8072;
+    --salmon-dark: #e8604f;
+    --salmon-light: #fdb8b0;
+    --cream: #fff8f5;
+    --ink: #2a1a17;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    color: var(--salmon-dark);
+    margin: 0 0 0.25rem;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    margin: 0 0 1.25rem;
+  }
+
+  .panel {
+    background: #ffffff;
+    border: 1px solid var(--salmon-light);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .popup-panel {
+    background: var(--salmon-light);
+    border: 2px solid var(--salmon-dark);
+    text-align: center;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  .popup-panel h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--ink);
+    font-size: 1rem;
+  }
+
+  .popup-panel .choices {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .stat-box {
+    text-align: center;
+  }
+
+  .stat-label {
+    color: var(--ink);
+    opacity: 0.7;
+    font-size: 0.75rem;
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: var(--salmon-dark);
+  }
+
+  .current-city {
+    text-align: center;
+    margin: 0.5rem 0 1.25rem;
+  }
+
+  .current-city .label {
+    font-size: 0.75rem;
+    opacity: 0.7;
+  }
+
+  .current-city .name {
+    font-size: 1.6rem;
+    font-weight: bold;
+  }
+
+  .current-city .name .next-letter {
+    color: var(--salmon-dark);
+    text-decoration: underline;
+  }
+
+  .current-city .country {
+    font-size: 0.85rem;
+    margin-top: 0.2rem;
+    opacity: 0.8;
+  }
+
+  form {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--salmon-light);
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 0.95rem;
+    background: var(--cream);
+    color: var(--ink);
+  }
+
+  input[type="text"]:focus {
+    outline: 1px solid var(--salmon-dark);
+  }
+
+  button {
+    font-family: Verdana, Geneva, sans-serif;
+    font-weight: bold;
+    font-size: 0.85rem;
+    background: var(--salmon);
+    color: var(--cream);
+    border: 1px solid var(--salmon-dark);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+  }
+
+  button:hover { background: var(--salmon-dark); }
+
+  .message {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    min-height: 1.2rem;
+  }
+
+  .message.bad { color: var(--salmon-dark); }
+  .message.good { color: #4a7a3d; }
+
+  .used-list {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    max-height: 140px;
+    overflow-y: auto;
+  }
+
+  .used-list .entry {
+    border-bottom: 1px dotted var(--salmon-light);
+    padding: 0.2rem 0;
+  }
+
+  .used-list .entry:last-child { border-bottom: none; }
+
+  a.back-link {
+    display: inline-block;
+    margin-bottom: 1.25rem;
+    font-size: 0.8rem;
+    color: var(--salmon-dark);
+  }
+
+  .lifeline-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+  }
+
+  .lifeline-row {
+    border: 1px solid var(--salmon-light);
+  }
+
+  .lifeline-btn {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: none;
+    color: var(--salmon-dark);
+    border: none;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-align: left;
+    padding: 0.45rem 0.7rem;
+    cursor: pointer;
+  }
+
+  .lifeline-btn:hover:not(:disabled) {
+    background: var(--salmon-light);
+    color: var(--ink);
+  }
+
+  .lifeline-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .lifeline-uses {
+    font-size: 0.7rem;
+    font-weight: normal;
+    opacity: 0.8;
+  }
+
+  .lifeline-result {
+    font-size: 0.8rem;
+    padding: 0 0.7rem 0.5rem;
+    color: var(--ink);
+  }
+
+  .lifeline-result:empty { display: none; }
+
+  .bottom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.25rem;
+    gap: 0.5rem;
+  }
+
+  .bottom-row button {
+    background: none;
+    color: var(--salmon-dark);
+    border: 1px solid var(--salmon-light);
+    font-size: 0.8rem;
+  }
+
+  .bottom-row button:hover {
+    background: var(--salmon-light);
+    color: var(--ink);
+  }
+
+  .reset-score-btn {
+    font-weight: normal;
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <a class="back-link" href="index.html">&larr; back to home</a>
+  <h1>city chain</h1>
+  <p class="subtitle">name a real city that starts with the last letter of the previous one. no repeats.</p>
+
+  <div class="popup-panel" id="lifelinePopup">
+    <h3>You've reached 50 guesses! Choose a lifeline to restore:</h3>
+    <div class="choices">
+      <button type="button" onclick="chooseLifeline('country')">Country</button>
+      <button type="button" onclick="chooseLifeline('letters')">Letters</button>
+      <button type="button" onclick="chooseLifeline('population')">Population</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-label">score</div>
+        <div class="stat-value" id="score">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">high score</div>
+        <div class="stat-value" id="highScore">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">games played</div>
+        <div class="stat-value" id="gamesPlayed">0</div>
+      </div>
+    </div>
+
+    <div class="current-city">
+      <div class="label">current city</div>
+      <div class="name" id="currentCity">&mdash;</div>
+      <div class="country" id="currentCountry"></div>
+    </div>
+
+    <form id="guessForm" autocomplete="off">
+      <input type="text" id="guessInput" placeholder="type a city name..." />
+      <button type="submit">guess</button>
+    </form>
+
+    <div class="message" id="message"></div>
+
+    <div class="lifeline-col">
+      <div class="lifeline-row">
+        <button class="lifeline-btn" id="lifelineCountry" type="button">
+          <span>country</span>
+          <span class="lifeline-uses" id="usesCountry"></span>
+        </button>
+        <div class="lifeline-result" id="resultCountry"></div>
+      </div>
+      <div class="lifeline-row">
+        <button class="lifeline-btn" id="lifelineLetters" type="button">
+          <span>letters</span>
+          <span class="lifeline-uses" id="usesLetters"></span>
+        </button>
+        <div class="lifeline-result" id="resultLetters"></div>
+      </div>
+      <div class="lifeline-row">
+        <button class="lifeline-btn" id="lifelineCount" type="button">
+          <span>population</span>
+          <span class="lifeline-uses" id="usesCount"></span>
+        </button>
+        <div class="lifeline-result" id="resultCount"></div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <button id="restartBtn" type="button">new game</button>
+      <button class="reset-score-btn" id="resetScoreBtn" type="button">reset high score</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="stat-label" style="margin-bottom:0.5rem;">cities used this round</div>
+    <div class="used-list" id="usedList"></div>
+  </div>
+</main>
+
+<script src="cities.js"></script>
+<script>
+  const cityIndex = new Map();
+  CITIES_DATA.forEach(entry => {
+    const key = entry.a.toLowerCase().trim();
+    if (!cityIndex.has(key)) cityIndex.set(key, []);
+    cityIndex.get(key).push(entry);
+  });
+  const allKeys = Array.from(cityIndex.keys());
+
+  // change this number to adjust how many uses each lifeline starts with / restores to
+  const LIFELINE_COUNT = 1;
+
+  let currentCityEntry = null;
+  let usedKeys = new Set();
+  let score = 0;
+  let highScore = parseInt(localStorage.getItem('cityChainHighScore') || '0', 10);
+  let gamesPlayed = parseInt(localStorage.getItem('cityChainGamesPlayed') || '0', 10);
+  let pendingStartCity = null;
+  let roundOver = false;
+
+  const lifelines = {
+    country: { uses: LIFELINE_COUNT, result: '' },
+    letters: { uses: LIFELINE_COUNT, result: '' },
+    population: { uses: LIFELINE_COUNT, result: '' }
+  };
+
+  const scoreEl = document.getElementById('score');
+  const highScoreEl = document.getElementById('highScore');
+  const gamesPlayedEl = document.getElementById('gamesPlayed');
+  const currentCityEl = document.getElementById('currentCity');
+  const currentCountryEl = document.getElementById('currentCountry');
+  const messageEl = document.getElementById('message');
+  const usedListEl = document.getElementById('usedList');
+  const guessForm = document.getElementById('guessForm');
+  const guessInput = document.getElementById('guessInput');
+  const guessSubmitBtn = guessForm.querySelector('button[type="submit"]');
+  const restartBtn = document.getElementById('restartBtn');
+  const resetScoreBtn = document.getElementById('resetScoreBtn');
+  const lifelinePopup = document.getElementById('lifelinePopup');
+
+  const lifelineEls = {
+    country: {
+      btn: document.getElementById('lifelineCountry'),
+      uses: document.getElementById('usesCountry'),
+      result: document.getElementById('resultCountry')
+    },
+    letters: {
+      btn: document.getElementById('lifelineLetters'),
+      uses: document.getElementById('usesLetters'),
+      result: document.getElementById('resultLetters')
+    },
+    population: {
+      btn: document.getElementById('lifelineCount'),
+      uses: document.getElementById('usesCount'),
+      result: document.getElementById('resultCount')
+    }
+  };
+
+  highScoreEl.textContent = highScore;
+  gamesPlayedEl.textContent = gamesPlayed;
+
+  const ISO_OVERRIDES = {
+    'XW': 'PS', 
+    'XG': 'PS', 
+    'XR': 'SJ'  
+  };
+
+  function isoToFlag(iso) {
+    if (!iso || iso.length !== 2) return '';
+    const code = ISO_OVERRIDES[iso.toUpperCase()] || iso.toUpperCase();
+    const codePoints = code.split('').map(
+      c => 0x1F1E6 + (c.charCodeAt(0) - 65)
+    );
+    return String.fromCodePoint(...codePoints);
+  }
+
+  function lastLetterOf(name) {
+    const cleaned = name.replace(/[^a-zA-Z]/g, '');
+    return cleaned.charAt(cleaned.length - 1).toLowerCase();
+  }
+
+  function renderCurrentCity() {
+    const name = currentCityEntry.c;
+    const letter = lastLetterOf(currentCityEntry.a);
+    const idx = name.toLowerCase().lastIndexOf(letter);
+    if (idx === -1) {
+      currentCityEl.textContent = name;
+    } else {
+      currentCityEl.innerHTML =
+        name.slice(0, idx) +
+        '<span class="next-letter">' + name.slice(idx, idx + 1) + '</span>' +
+        name.slice(idx + 1);
+    }
+    currentCountryEl.textContent =
+      isoToFlag(currentCityEntry.iso) + ' ' + currentCityEntry.co +
+      ' \u2014 pop. ' + (currentCityEntry.p ? currentCityEntry.p.toLocaleString() : 'unknown');
+  }
+
+  function renderUsedList() {
+    usedListEl.innerHTML = '';
+    usedKeys.forEach(key => {
+      const entry = cityIndex.get(key)[0];
+      const div = document.createElement('div');
+      div.className = 'entry';
+      div.textContent = isoToFlag(entry.iso) + ' ' + entry.c + ', ' + entry.co;
+      usedListEl.appendChild(div);
+    });
+  }
+
+  function setMessage(text, type) {
+    messageEl.textContent = text;
+    messageEl.className = 'message' + (type ? ' ' + type : '');
+  }
+
+  function renderLifelines() {
+    Object.keys(lifelines).forEach(key => {
+      const state = lifelines[key];
+      const els = lifelineEls[key];
+      if (state.uses <= 0) {
+        const guessesUntil = 50 - (score % 50);
+        els.uses.textContent = `(${guessesUntil} guesses to replenish)`;
+      } else {
+        els.uses.textContent = '(' + state.uses + ' left)';
+      }
+      els.btn.disabled = state.uses <= 0 || roundOver;
+      els.result.textContent = state.result;
+    });
+  }
+
+  function clearLifelineResults() {
+    Object.keys(lifelines).forEach(key => { lifelines[key].result = ''; });
+    renderLifelines();
+  }
+
+  function levenshtein(a, b) {
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        dp[i][j] = a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+    return dp[m][n];
+  }
+
+  function findClosestSuggestion(guessKey, requiredLetter) {
+    let best = null;
+    let bestDist = Infinity;
+    for (const key of allKeys) {
+      if (key.charAt(0) !== requiredLetter) continue;
+      if (usedKeys.has(key)) continue;
+      const dist = levenshtein(guessKey, key);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = key;
+      }
+    }
+    if (best && bestDist <= 2 && guessKey.length >= 6) {
+      return cityIndex.get(best)[0];
+    }
+    return null;
+  }
+
+  function getTopCandidates(requiredLetter, count) {
+    const matches = [];
+    for (const key of allKeys) {
+      if (key.charAt(0) !== requiredLetter) continue;
+      if (usedKeys.has(key)) continue;
+      matches.push(cityIndex.get(key)[0]);
+    }
+    matches.sort((a, b) => b.p - a.p);
+    return matches.slice(0, count);
+  }
+
+  const SESSION_KEY = 'cityChainSession';
+
+  function saveSession() {
+    const session = {
+      currentCityEntry,
+      usedKeys: Array.from(usedKeys),
+      score,
+      lifelineUses: {
+        country: lifelines.country.uses,
+        letters: lifelines.letters.uses,
+        population: lifelines.population.uses
+      },
+      popupOpen: lifelinePopup.style.display === 'block'
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  }
+
+  function loadSession() {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function resumeSession(session) {
+    currentCityEntry = session.currentCityEntry;
+    usedKeys = new Set(session.usedKeys);
+    score = session.score;
+    lifelines.country.uses = session.lifelineUses.country;
+    lifelines.letters.uses = session.lifelineUses.letters;
+    lifelines.population.uses = session.lifelineUses.population;
+    lifelines.country.result = '';
+    lifelines.letters.result = '';
+    lifelines.population.result = '';
+    roundOver = false;
+
+    scoreEl.textContent = score;
+    renderCurrentCity();
+    renderUsedList();
+    renderLifelines();
+    guessInput.value = '';
+
+    if (session.popupOpen) {
+      lifelinePopup.style.display = 'block';
+      setGuessLocked(true);
+      setMessage('welcome back! pick a lifeline to restore.', 'good');
+    } else {
+      lifelinePopup.style.display = 'none';
+      setGuessLocked(false);
+      setMessage('welcome back, picking up where you left off.', 'good');
+      guessInput.focus();
+    }
+  }
+
+  function pickRandomStartingCity() {
+    const sorted = [...CITIES_DATA].sort((a, b) => b.p - a.p);
+    const pool = sorted.slice(0, 500);
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function setGuessLocked(locked) {
+    guessInput.disabled = locked;
+    guessSubmitBtn.disabled = locked;
+  }
+
+  function startGame() {
+    const previousScore = score;
+    score = 0;
+    usedKeys = new Set();
+    roundOver = false;
+    lifelinePopup.style.display = 'none';
+
+    if (previousScore > 1) {
+      gamesPlayed += 1;
+      localStorage.setItem('cityChainGamesPlayed', String(gamesPlayed));
+      gamesPlayedEl.textContent = gamesPlayed;
+    }
+
+    currentCityEntry = pendingStartCity || pickRandomStartingCity();
+    pendingStartCity = null;
+
+    usedKeys.add(currentCityEntry.a.toLowerCase().trim());
+    scoreEl.textContent = score;
+    renderCurrentCity();
+    renderUsedList();
+    setMessage('');
+    guessInput.value = '';
+    setGuessLocked(false);
+    guessInput.focus();
+
+    lifelines.country.uses = LIFELINE_COUNT;
+    lifelines.letters.uses = LIFELINE_COUNT;
+    lifelines.population.uses = LIFELINE_COUNT;
+    clearLifelineResults();
+    saveSession();
+  }
+
+  guessForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (roundOver) return;
+    const raw = guessInput.value.trim();
+    if (!raw) return;
+
+    const key = raw.toLowerCase();
+    const requiredLetter = lastLetterOf(currentCityEntry.a);
+    if (key.charAt(0) !== requiredLetter) {
+      setMessage('needs to start with "' + requiredLetter.toUpperCase() + '".', 'bad');
+      return;
+    }
+
+    if (usedKeys.has(key)) {
+      setMessage('already used that one, try another.', 'bad');
+      return;
+    }
+
+
+    if (!cityIndex.has(key)) {
+      const suggestion = findClosestSuggestion(key, requiredLetter);
+      if (suggestion) {
+        setMessage('not found, did you mean "' + suggestion.c + '"?', 'bad');
+      } else {
+        setMessage('that doesn\'t match a city in the list.', 'bad');
+      }
+      return;
+    }
+
+    usedKeys.add(key);
+    currentCityEntry = cityIndex.get(key)[0];
+    score += 1;
+    scoreEl.textContent = score;
+
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem('cityChainHighScore', String(highScore));
+      highScoreEl.textContent = highScore;
+    }
+
+    renderCurrentCity();
+    renderUsedList();
+    clearLifelineResults();
+    guessInput.value = '';
+    guessInput.focus();
+
+    if (score > 0 && score % 50 === 0) {
+      lifelinePopup.style.display = 'block';
+      setGuessLocked(true);
+      setMessage('nice, ' + currentCityEntry.c + ' it is. Pick a lifeline to restore!', 'good');
+    } else {
+      setMessage('nice, ' + currentCityEntry.c + ' it is.', 'good');
+    }
+    saveSession();
+  });
+
+  restartBtn.addEventListener('click', () => {
+    let banner = null;
+
+    if (!roundOver && usedKeys.size > 0 && score > 0) {
+      const requiredLetter = lastLetterOf(currentCityEntry.a);
+      const [answer] = getTopCandidates(requiredLetter, 1);
+
+      if (answer) {
+        banner = 'the answer was "' + answer.c + '" (' +
+          isoToFlag(answer.iso) + ' ' + answer.co + '). final score: ' + score + '.';
+      } else {
+        banner = 'no valid cities were left for that letter anyway! final score: ' + score + '.';
+      }
+    }
+
+    // always start the next round on a fresh random city
+    pendingStartCity = null;
+    startGame();
+
+    if (banner) setMessage(banner, 'bad');
+  });
+
+  // Custom function bound to the popup buttons
+  window.chooseLifeline = function(key) {
+    lifelines[key].uses += 1;
+    lifelinePopup.style.display = 'none';
+    setGuessLocked(false);
+    renderLifelines();
+    guessInput.focus();
+    saveSession();
+  };
+
+  Object.keys(lifelines).forEach(key => {
+    lifelineEls[key].btn.addEventListener('click', () => {
+      if (lifelines[key].uses <= 0 || roundOver) return;
+      const requiredLetter = lastLetterOf(currentCityEntry.a);
+      const [top] = getTopCandidates(requiredLetter, 1);
+
+      let text;
+      if (!top) {
+        text = 'no valid cities left for that letter.';
+      } else if (key === 'country') {
+        text = isoToFlag(top.iso) + ' ' + top.co;
+      } else if (key === 'letters') {
+        const cleaned = top.a.replace(/[^a-zA-Z]/g, '');
+        const thirdLen = Math.max(1, Math.ceil(cleaned.length / 3));
+        text = cleaned.split('').map(
+          (ch, i) => i < thirdLen ? ch.toUpperCase() : '_'
+        ).join(' ');
+      } else if (key === 'population') {
+        text = top.p ? ('about ' + top.p.toLocaleString()) : 'unknown';
+      }
+
+      lifelines[key].uses -= 1;
+      lifelines[key].result = text;
+      renderLifelines();
+      saveSession();
+    });
+  });
+
+  resetScoreBtn.addEventListener('click', () => {
+    const confirmed = confirm('reset your high score back to 0? this can\'t be undone.');
+    if (!confirmed) return;
+    localStorage.removeItem('cityChainHighScore');
+    highScore = 0;
+    highScoreEl.textContent = highScore;
+    setMessage('high score reset.', 'good');
+  });
+
+  const savedSession = loadSession();
+  if (savedSession && savedSession.currentCityEntry) {
+    resumeSession(savedSession);
+  } else {
+    startGame();
+  }
+</script>
+
+</body>
+</html>

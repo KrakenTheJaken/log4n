@@ -1,159 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Portfolio</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>log4n :: home</title>
+<style>
+  :root {
+    --salmon: #FA8072;
+    --salmon-dark: #e8604f;
+    --salmon-light: #fdb8b0;
+    --cream: #fff8f5;
+    --ink: #2a1a17;
+  }
 
-    :root {
-      --salmon: #FA8072;
-      --salmon-dark: #e8604f;
-      --salmon-light: #fdb8b0;
-      --cream: #fff8f5;
-      --ink: #2a1a17;
-    }
+  * { box-sizing: border-box; }
 
-    body {
-      background-color: var(--salmon);
-      font-family: 'DM Mono', monospace;
-      color: var(--ink);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 13px;
+    min-height: 100vh;
+  }
 
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
-    }
+  a { color: var(--salmon-dark); text-decoration: underline; }
+  a:hover { color: var(--ink); }
 
-    .card {
-      position: relative;
-      z-index: 1;
-      background: var(--cream);
-      border: 2px solid var(--ink);
-      padding: 3.5rem 4rem;
-      max-width: 480px;
-      width: 90%;
-      box-shadow: 8px 8px 0 var(--ink);
-      animation: slideIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
+  .site-header {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 0.5rem;
+  }
 
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(30px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+  .banner {
+    background: var(--salmon-light);
+    border: 1px solid var(--salmon-dark);
+    text-align: center;
+    padding: 1.5rem 1rem;
+    margin-bottom: 0.75rem;
+  }
 
-    .eyebrow {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--salmon-dark);
-      margin-bottom: 0.5rem;
-    }
+  .site-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin: 0;
+    color: var(--salmon-dark);
+  }
 
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.8rem;
-      line-height: 1.1;
-      margin-bottom: 1rem;
-    }
+  .site-subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
 
-    .divider {
-      width: 40px;
-      height: 3px;
-      background: var(--salmon);
-      margin: 1.2rem 0;
-    }
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0.5rem 1.5rem 3rem;
+  }
 
-    p {
-      font-size: 0.82rem;
-      line-height: 1.8;
-      color: #5a3530;
-      margin-bottom: 2rem;
-    }
+  .panel {
+    background: #ffffff;
+    border: 1px solid var(--salmon-light);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
 
-    .links {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
+  .panel h2 {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 0 0 0.6rem;
+    color: var(--salmon-dark);
+    border-bottom: 1px solid var(--salmon-light);
+    padding-bottom: 0.4rem;
+  }
 
-    .link-btn {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      text-decoration: none;
-      color: var(--ink);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.78rem;
-      letter-spacing: 0.05em;
-      border: 1.5px solid var(--ink);
-      padding: 0.7rem 1.1rem;
-      transition: all 0.18s ease;
-      background: transparent;
-    }
+  .panel p {
+    line-height: 1.6;
+    font-size: 0.9rem;
+    margin: 0 0 0.75rem;
+  }
 
-    .link-btn:hover {
-      background: var(--ink);
-      color: var(--cream);
-      transform: translate(-2px, -2px);
-      box-shadow: 4px 4px 0 var(--salmon-dark);
-    }
+  .play-btn {
+    display: inline-block;
+    background: var(--salmon);
+    color: var(--cream);
+    border: 1px solid var(--salmon-dark);
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+  }
 
-    .link-btn svg { flex-shrink: 0; }
+  .play-btn:hover {
+    background: var(--salmon-dark);
+    color: var(--cream);
+  }
 
-    #oneko { z-index: 9999 !important; }
+  .page-view { display: none; }
+  .page-view.active { display: block; }
 
-    .corner-accent {
-      position: absolute;
-      top: -10px;
-      right: -10px;
-      width: 30px;
-      height: 30px;
-      background: var(--salmon);
-      border: 2px solid var(--ink);
-    }
-  </style>
+  /* ---- slide-out tab panel ---- */
+
+  .tab-toggle {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 50;
+    background: var(--salmon);
+    color: var(--cream);
+    border: 1px solid var(--salmon-dark);
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 0.85rem;
+    font-weight: bold;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+  }
+
+  .tab-toggle:hover { background: var(--salmon-dark); }
+
+  .tab-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 200px;
+    background: var(--cream);
+    border-left: 1px solid var(--salmon-dark);
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    z-index: 40;
+    padding: 4.5rem 1.25rem 1.5rem;
+  }
+
+  .tab-drawer.open { transform: translateX(0); }
+
+  .tab-drawer nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .tab-link {
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 0.85rem;
+    text-decoration: none;
+    color: var(--ink);
+    padding: 0.45rem 0.65rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-align: left;
+    background: none;
+  }
+
+  .tab-link:hover {
+    border-color: var(--salmon-light);
+    background: #ffffff;
+  }
+
+  .tab-link.active {
+    background: var(--salmon-light);
+    color: var(--ink);
+    border-color: var(--salmon);
+  }
+
+  .drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(42, 26, 23, 0.15);
+    z-index: 30;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .drawer-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  footer {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1rem 1.5rem 3rem;
+    font-size: 0.8rem;
+    opacity: 0.6;
+  }
+</style>
 </head>
 <body>
-  <div class="card">
-    <div class="corner-accent"></div>
-    <div class="eyebrow"></div>
-    <h1>Logan<br/>Clark</h1>
-    <div class="divider"></div>
-    <p>Hello ^_^ <br/>This website will get better as time goes on but for now here it is!</p>
-    <div class="links">
-      <a class="link-btn" href="https://github.com/KrakenTheJaken" target="_blank" rel="noopener">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.54-1.38-1.33-1.74-1.33-1.74-1.09-.74.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02.005 2.04.14 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/>
-        </svg>
-        github.com/KrakenTheJaken
-      </a>
-      <a class="link-btn" href="https://www.linkedin.com/in/logan-h-clark/" target="_blank" rel="noopener">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.37V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/>
-        </svg>
-        linkedin.com/in/logan-h-clark
-      </a>
-      <a class="link-btn" href="mailto:logan11clark@gmail.com">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-        </svg>
-        logan11clark@gmail.com
-      </a>
-    </div>
+
+<button class="tab-toggle" id="tabToggle" aria-label="open menu">menu</button>
+<div class="drawer-overlay" id="drawerOverlay"></div>
+
+<div class="tab-drawer" id="tabDrawer">
+  <nav>
+    <button class="tab-link active" data-page="home">home</button>
+    <button class="tab-link" data-page="games">games</button>
+    <!-- add more tabs here later, just copy a button line above
+         and a matching .page-view section below -->
+  </nav>
+</div>
+
+<header class="site-header">
+  <div class="banner">
+    <p class="site-title">log4n</p>
+    <p class="site-subtitle">my website :)</p>
   </div>
-  <script src="./oneko.js"></script>
+</header>
+
+<main>
+
+  <section class="page-view active" id="page-home">
+    <div class="panel">
+      <h2>welcome</h2>
+      <p>errrr heloooo</p>
+      <p></p>
+    </div>
+  </section>
+
+  <section class="page-view" id="page-games">
+    <div class="panel">
+      <h2>games</h2>
+      <p>City Guesser</p>
+      <a href="game.html" class="play-btn">play &rarr;</a>
+    </div>
+  </section>
+
+</main>
+
+
+
+<script src="oneko.js"></script>
+
+<script>
+  const tabToggle = document.getElementById('tabToggle');
+  const tabDrawer = document.getElementById('tabDrawer');
+  const drawerOverlay = document.getElementById('drawerOverlay');
+  const tabLinks = document.querySelectorAll('.tab-link');
+  const pageViews = document.querySelectorAll('.page-view');
+
+  function closeDrawer() {
+    tabDrawer.classList.remove('open');
+    drawerOverlay.classList.remove('open');
+  }
+
+  tabToggle.addEventListener('click', () => {
+    tabDrawer.classList.toggle('open');
+    drawerOverlay.classList.toggle('open');
+  });
+
+  drawerOverlay.addEventListener('click', closeDrawer);
+
+  tabLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      const target = link.dataset.page;
+
+      tabLinks.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+
+      pageViews.forEach(view => {
+        view.classList.toggle('active', view.id === 'page-' + target);
+      });
+
+      closeDrawer();
+    });
+  });
+</script>
+
 </body>
 </html>
