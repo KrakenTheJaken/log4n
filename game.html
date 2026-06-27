@@ -39,7 +39,37 @@
 
   .subtitle {
     font-size: 0.85rem;
-    margin: 0 0 1.25rem;
+    margin: 0 0 1rem;
+  }
+
+  .mode-tabs {
+    display: flex;
+    margin-bottom: 1.25rem;
+    border: 2px solid var(--salmon-light);
+    border-radius: 6px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  .mode-tab {
+    flex: 1;
+    text-align: center;
+    padding: 0.6rem;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--salmon-dark);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .mode-tab:not(.active):hover {
+    background: var(--cream);
+  }
+
+  .mode-tab.active {
+    background: var(--salmon-light);
+    color: var(--ink);
   }
 
   .panel {
@@ -265,6 +295,11 @@
   <h1>city chain</h1>
   <p class="subtitle">name a real city that starts with the last letter of the previous one. no repeats.</p>
 
+  <div class="mode-tabs">
+    <div class="mode-tab active" id="tab-infinite" onclick="switchMode('infinite')">infinite mode</div>
+    <div class="mode-tab" id="tab-timed" onclick="switchMode('timed')">Sprint</div>
+  </div>
+
   <div class="popup-panel" id="lifelinePopup">
     <h3>You've reached 50 guesses! Choose a lifeline to restore:</h3>
     <div class="choices">
@@ -284,7 +319,11 @@
         <div class="stat-label">high score</div>
         <div class="stat-value" id="highScore">0</div>
       </div>
-      <div class="stat-box">
+      <div class="stat-box" id="timeStatBox" style="display: none;">
+        <div class="stat-label">time left</div>
+        <div class="stat-value" id="timeDisplay">5:00</div>
+      </div>
+      <div class="stat-box" id="gamesStatBox">
         <div class="stat-label">games played</div>
         <div class="stat-value" id="gamesPlayed">0</div>
       </div>
@@ -349,16 +388,25 @@
   });
   const allKeys = Array.from(cityIndex.keys());
 
-  // change this number to adjust how many uses each lifeline starts with / restores to
   const LIFELINE_COUNT = 1;
+  const GAME_DURATION = 300; 
 
   let currentCityEntry = null;
   let usedKeys = new Set();
   let score = 0;
-  let highScore = parseInt(localStorage.getItem('cityChainHighScore') || '0', 10);
+  
+  let highScoreInfinite = parseInt(localStorage.getItem('cityChainHighScore') || '0', 10);
+  let highScoreTimed = parseInt(localStorage.getItem('cityChainTimedHighScore') || '0', 10);
+  
   let gamesPlayed = parseInt(localStorage.getItem('cityChainGamesPlayed') || '0', 10);
   let pendingStartCity = null;
   let roundOver = false;
+
+  let gameMode = 'infinite';
+  let endTime = null;
+  let timeRemaining = GAME_DURATION;
+  let timerStarted = false;
+  let timerInterval = null;
 
   const lifelines = {
     country: { uses: LIFELINE_COUNT, result: '' },
@@ -369,6 +417,10 @@
   const scoreEl = document.getElementById('score');
   const highScoreEl = document.getElementById('highScore');
   const gamesPlayedEl = document.getElementById('gamesPlayed');
+  const timeStatBox = document.getElementById('timeStatBox');
+  const timeDisplay = document.getElementById('timeDisplay');
+  const gamesStatBox = document.getElementById('gamesStatBox');
+  
   const currentCityEl = document.getElementById('currentCity');
   const currentCountryEl = document.getElementById('currentCountry');
   const messageEl = document.getElementById('message');
@@ -381,44 +433,62 @@
   const lifelinePopup = document.getElementById('lifelinePopup');
 
   const lifelineEls = {
-    country: {
-      btn: document.getElementById('lifelineCountry'),
-      uses: document.getElementById('usesCountry'),
-      result: document.getElementById('resultCountry')
-    },
-    letters: {
-      btn: document.getElementById('lifelineLetters'),
-      uses: document.getElementById('usesLetters'),
-      result: document.getElementById('resultLetters')
-    },
-    population: {
-      btn: document.getElementById('lifelineCount'),
-      uses: document.getElementById('usesCount'),
-      result: document.getElementById('resultCount')
-    }
+    country: { btn: document.getElementById('lifelineCountry'), uses: document.getElementById('usesCountry'), result: document.getElementById('resultCountry') },
+    letters: { btn: document.getElementById('lifelineLetters'), uses: document.getElementById('usesLetters'), result: document.getElementById('resultLetters') },
+    population: { btn: document.getElementById('lifelineCount'), uses: document.getElementById('usesCount'), result: document.getElementById('resultCount') }
   };
 
-  highScoreEl.textContent = highScore;
   gamesPlayedEl.textContent = gamesPlayed;
 
-  const ISO_OVERRIDES = {
-    'XW': 'PS', 
-    'XG': 'PS', 
-    'XR': 'SJ'  
-  };
+  const ISO_OVERRIDES = { 'XW': 'PS', 'XG': 'PS', 'XR': 'SJ' };
 
   function isoToFlag(iso) {
     if (!iso || iso.length !== 2) return '';
     const code = ISO_OVERRIDES[iso.toUpperCase()] || iso.toUpperCase();
-    const codePoints = code.split('').map(
-      c => 0x1F1E6 + (c.charCodeAt(0) - 65)
-    );
+    const codePoints = code.split('').map(c => 0x1F1E6 + (c.charCodeAt(0) - 65));
     return String.fromCodePoint(...codePoints);
   }
 
   function lastLetterOf(name) {
     const cleaned = name.replace(/[^a-zA-Z]/g, '');
     return cleaned.charAt(cleaned.length - 1).toLowerCase();
+  }
+
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return m + ':' + s.toString().padStart(2, '0');
+  }
+
+  function updateTimerDisplay() {
+    timeDisplay.textContent = formatTime(timeRemaining);
+  }
+
+  function startTimer() {
+    clearInterval(timerInterval);
+    updateTimerDisplay();
+    
+    timerInterval = setInterval(() => {
+      if (roundOver) {
+        clearInterval(timerInterval);
+        return;
+      }
+      
+      timeRemaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      updateTimerDisplay();
+      
+      if (timeRemaining <= 0) {
+        clearInterval(timerInterval);
+        endTimedGame();
+      }
+    }, 500);
+  }
+
+  function endTimedGame() {
+    roundOver = true;
+    setGuessLocked(true);
+    setMessage('time\'s up! final score: ' + score + '.', 'bad');
+    saveSession();
   }
 
   function renderCurrentCity() {
@@ -518,10 +588,15 @@
     return matches.slice(0, count);
   }
 
-  const SESSION_KEY = 'cityChainSession';
+  function getSessionKey(mode) {
+    return 'cityChainSession_' + mode;
+  }
 
   function saveSession() {
     const session = {
+      endTime,
+      timerStarted,
+      timeRemaining,
       currentCityEntry,
       usedKeys: Array.from(usedKeys),
       score,
@@ -532,16 +607,39 @@
       },
       popupOpen: lifelinePopup.style.display === 'block'
     };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(getSessionKey(gameMode), JSON.stringify(session));
   }
 
-  function loadSession() {
+  function loadSession(mode) {
     try {
-      const raw = localStorage.getItem(SESSION_KEY);
+      const raw = localStorage.getItem(getSessionKey(mode));
       if (!raw) return null;
       return JSON.parse(raw);
     } catch (e) {
       return null;
+    }
+  }
+
+  function updateHighScoreDisplay() {
+    if (gameMode === 'infinite') {
+      highScoreEl.textContent = highScoreInfinite;
+    } else {
+      highScoreEl.textContent = highScoreTimed;
+    }
+  }
+
+  function applyModeUI() {
+    updateHighScoreDisplay();
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + gameMode).classList.add('active');
+
+    if (gameMode === 'timed') {
+      gamesStatBox.style.display = 'none';
+      timeStatBox.style.display = 'block';
+      updateTimerDisplay();
+    } else {
+      gamesStatBox.style.display = 'block';
+      timeStatBox.style.display = 'none';
     }
   }
 
@@ -555,23 +653,41 @@
     lifelines.country.result = '';
     lifelines.letters.result = '';
     lifelines.population.result = '';
-    roundOver = false;
+    
+    if (gameMode === 'timed') {
+      timerStarted = session.timerStarted || false;
+      timeRemaining = session.timeRemaining;
+      if (timerStarted) {
+        endTime = session.endTime;
+        timeRemaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+        roundOver = (timeRemaining <= 0);
+      } else {
+        roundOver = false;
+      }
+    } else {
+      roundOver = false;
+    }
 
+    applyModeUI();
     scoreEl.textContent = score;
     renderCurrentCity();
     renderUsedList();
     renderLifelines();
     guessInput.value = '';
 
-    if (session.popupOpen) {
+    if (session.popupOpen && !roundOver) {
       lifelinePopup.style.display = 'block';
+      setMessage('welcome back! pick a lifeline or keep guessing.', 'good');
+      if (gameMode === 'timed' && timerStarted) startTimer();
+    } else if (roundOver) {
       setGuessLocked(true);
-      setMessage('welcome back! pick a lifeline to restore.', 'good');
+      setMessage('time\'s up! final score: ' + score + '.', 'bad');
     } else {
       lifelinePopup.style.display = 'none';
       setGuessLocked(false);
       setMessage('welcome back, picking up where you left off.', 'good');
       guessInput.focus();
+      if (gameMode === 'timed' && timerStarted) startTimer();
     }
   }
 
@@ -587,13 +703,16 @@
   }
 
   function startGame() {
+    clearInterval(timerInterval);
     const previousScore = score;
     score = 0;
     usedKeys = new Set();
     roundOver = false;
     lifelinePopup.style.display = 'none';
 
-    if (previousScore > 1) {
+    applyModeUI();
+
+    if (gameMode === 'infinite' && previousScore > 1) {
       gamesPlayed += 1;
       localStorage.setItem('cityChainGamesPlayed', String(gamesPlayed));
       gamesPlayedEl.textContent = gamesPlayed;
@@ -615,8 +734,39 @@
     lifelines.letters.uses = LIFELINE_COUNT;
     lifelines.population.uses = LIFELINE_COUNT;
     clearLifelineResults();
+    
+    if (gameMode === 'timed') {
+      timeRemaining = GAME_DURATION;
+      timerStarted = false;
+      updateTimerDisplay(); // Ensures it says 5:00 right away
+    }
+    
     saveSession();
   }
+
+  window.switchMode = function(newMode) {
+    if (newMode === gameMode) return;
+    saveSession(); 
+    
+    gameMode = newMode;
+    const savedSession = loadSession(gameMode);
+    
+    if (savedSession && savedSession.currentCityEntry) {
+      resumeSession(savedSession);
+    } else {
+      startGame();
+    }
+  };
+
+  // NEW: Start the timer as soon as the user starts typing
+  guessInput.addEventListener('input', () => {
+    if (gameMode === 'timed' && !timerStarted && !roundOver) {
+      timerStarted = true;
+      endTime = Date.now() + timeRemaining * 1000;
+      startTimer();
+      saveSession();
+    }
+  });
 
   guessForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -636,7 +786,6 @@
       return;
     }
 
-
     if (!cityIndex.has(key)) {
       const suggestion = findClosestSuggestion(key, requiredLetter);
       if (suggestion) {
@@ -652,10 +801,14 @@
     score += 1;
     scoreEl.textContent = score;
 
-    if (score > highScore) {
-      highScore = score;
-      localStorage.setItem('cityChainHighScore', String(highScore));
-      highScoreEl.textContent = highScore;
+    if (gameMode === 'infinite' && score > highScoreInfinite) {
+      highScoreInfinite = score;
+      localStorage.setItem('cityChainHighScore', String(highScoreInfinite));
+      updateHighScoreDisplay();
+    } else if (gameMode === 'timed' && score > highScoreTimed) {
+      highScoreTimed = score;
+      localStorage.setItem('cityChainTimedHighScore', String(highScoreTimed));
+      updateHighScoreDisplay();
     }
 
     renderCurrentCity();
@@ -666,7 +819,7 @@
 
     if (score > 0 && score % 50 === 0) {
       lifelinePopup.style.display = 'block';
-      setGuessLocked(true);
+      // User can continue guessing while the popup is open
       setMessage('nice, ' + currentCityEntry.c + ' it is. Pick a lifeline to restore!', 'good');
     } else {
       setMessage('nice, ' + currentCityEntry.c + ' it is.', 'good');
@@ -689,18 +842,14 @@
       }
     }
 
-    // always start the next round on a fresh random city
     pendingStartCity = null;
     startGame();
-
     if (banner) setMessage(banner, 'bad');
   });
 
-  // Custom function bound to the popup buttons
   window.chooseLifeline = function(key) {
     lifelines[key].uses += 1;
     lifelinePopup.style.display = 'none';
-    setGuessLocked(false);
     renderLifelines();
     guessInput.focus();
     saveSession();
@@ -735,17 +884,24 @@
   });
 
   resetScoreBtn.addEventListener('click', () => {
-    const confirmed = confirm('reset your high score back to 0? this can\'t be undone.');
+    const confirmed = confirm('reset your high score for this mode back to 0? this can\'t be undone.');
     if (!confirmed) return;
-    localStorage.removeItem('cityChainHighScore');
-    highScore = 0;
-    highScoreEl.textContent = highScore;
+    
+    if (gameMode === 'infinite') {
+      localStorage.removeItem('cityChainHighScore');
+      highScoreInfinite = 0;
+    } else {
+      localStorage.removeItem('cityChainTimedHighScore');
+      highScoreTimed = 0;
+    }
+    updateHighScoreDisplay();
     setMessage('high score reset.', 'good');
   });
 
-  const savedSession = loadSession();
-  if (savedSession && savedSession.currentCityEntry) {
-    resumeSession(savedSession);
+  // Initialization
+  const initialSession = loadSession('infinite');
+  if (initialSession && initialSession.currentCityEntry) {
+    resumeSession(initialSession);
   } else {
     startGame();
   }
