@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>achievements :: city chain</title>
+<style>
+  :root {
+    --salmon: #FA8072;
+    --salmon-dark: #e8604f;
+    --salmon-light: #fdb8b0;
+    --cream: #fff8f5;
+    --ink: #2a1a17;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+  }
+
+  .header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+
+  a.nav-link {
+    font-size: 0.8rem;
+    color: var(--salmon-dark);
+    text-decoration: none;
+    margin-right: 1rem;
+  }
+
+  a.nav-link:hover { text-decoration: underline; }
+
+  .reset-btn {
+    background: var(--cream);
+    border: 1px solid var(--salmon-dark);
+    color: var(--salmon-dark);
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-family: Verdana, Geneva, sans-serif;
+  }
+
+  .reset-btn:hover { background: var(--salmon-light); color: var(--ink); }
+
+  h1 {
+    font-size: 1.4rem;
+    color: var(--salmon-dark);
+    margin: 0 0 0.25rem;
+  }
+
+  .subtitle { font-size: 0.85rem; margin: 0 0 1.25rem; }
+
+  .panel {
+    background: #ffffff;
+    border: 1px solid var(--salmon-light);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .panel h2 {
+    font-size: 1.05rem;
+    font-weight: bold;
+    margin: 0 0 0.6rem;
+    color: var(--salmon-dark);
+    border-bottom: 1px solid var(--salmon-light);
+    padding-bottom: 0.4rem;
+  }
+
+  .panel > p.desc { font-size: 0.8rem; opacity: 0.75; margin: 0 0 0.85rem; }
+
+  .region-block { margin-bottom: 1.5rem; }
+  .region-block:last-child { margin-bottom: 0; }
+  .region-title { font-weight: bold; font-size: 0.95rem; color: var(--ink); margin-bottom: 0.5rem; }
+
+  .tier-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+
+  .tier-btn {
+    background: var(--cream);
+    border: 1px solid var(--salmon-light);
+    color: var(--salmon-dark);
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .tier-btn:hover { background: var(--salmon-light); color: var(--ink); }
+  .tier-btn.complete { background: #dff0d4; border-color: #7fae5e; color: #3c6b27; }
+
+  .tier-btn .tier-progress { display: block; font-size: 0.65rem; font-weight: normal; opacity: 0.8; }
+
+  .tier-list { display: none; border: 1px solid var(--salmon-light); margin-bottom: 0.75rem; max-height: 320px; overflow-y: auto; }
+  .tier-list.open { display: block; }
+
+  .tier-entry { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.6rem; border-bottom: 1px dotted var(--salmon-light); font-size: 0.8rem; }
+  .tier-entry:last-child { border-bottom: none; }
+
+  .tier-entry .rank { width: 1.6rem; opacity: 0.5; font-size: 0.7rem; flex-shrink: 0; }
+  .tier-entry .flag { flex-shrink: 0; }
+  .tier-entry .name { flex: 1; }
+  .tier-entry.unfound .name { opacity: 0.45; font-style: italic; }
+  .tier-entry .pop { font-size: 0.7rem; opacity: 0.7; flex-shrink: 0; }
+
+  .milestone-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .milestone-badge { flex: 1; min-width: 90px; text-align: center; border: 1px solid var(--salmon-light); padding: 0.6rem 0.4rem; font-size: 0.75rem; }
+  .milestone-badge.complete { background: #dff0d4; border-color: #7fae5e; color: #3c6b27; }
+  .milestone-badge .num { font-size: 1.1rem; font-weight: bold; display: block; }
+
+  .caveat { font-size: 0.75rem; opacity: 0.65; margin-top: 1rem; }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="header-actions">
+    <div>
+      <a class="nav-link" href="game.html">&larr; game</a>
+      <a class="nav-link" href="stats.html">stats &rarr;</a>
+    </div>
+    <button id="resetAchievementsBtn" class="reset-btn" type="button">reset achievements</button>
+  </div>
+  
+  <h1>achievements</h1>
+  <p class="subtitle">collect cities by guessing them correctly in city chain.</p>
+
+  <div class="panel">
+    <h2>lifetime cities guessed</h2>
+    <div class="milestone-grid" id="lifetimeMilestones"></div>
+  </div>
+
+  <div class="panel">
+    <h2>high scores</h2>
+    <div class="region-title">infinite mode</div>
+    <div class="milestone-grid" id="infiniteMilestones"></div>
+    <div class="region-title" style="margin-top:0.85rem;">sprint mode</div>
+    <div class="milestone-grid" id="sprintMilestones"></div>
+  </div>
+
+  <div class="panel">
+    <h2>alphabet checklists</h2>
+    <p class="desc">the top 10 largest cities starting with every letter of the alphabet.</p>
+    <div class="tier-row" id="alphabetButtonsRow"></div>
+    <div id="alphabetListsContainer"></div>
+  </div>
+
+  <div class="panel">
+    <h2>regional checklists</h2>
+    <p class="desc">top cities by population across global regions.</p>
+    <div id="regionBlocks"></div>
+    <p class="caveat">note: a few cities share the exact same name. guessing one will mark all duplicates as found.</p>
+  </div>
+</main>
+
+<script src="cities.js"></script>
+<script>
+  function firstLetterOf(name) {
+    const cleaned = name.replace(/[^a-zA-Z]/g, '');
+    return cleaned ? cleaned.charAt(0).toLowerCase() : '';
+  }
+
+  function loadLifetimeGuessed() {
+    const raw = localStorage.getItem('cityChainLifetimeGuessed');
+    if (!raw) return new Set();
+    try {
+      let parsed = JSON.parse(raw);
+      while (typeof parsed === 'string') {
+        try { parsed = JSON.parse(parsed); } catch(e) { break; }
+      }
+      if (Array.isArray(parsed)) {
+        return new Set(parsed.filter(x => typeof x === 'string' && x.length > 1));
+      }
+    } catch (e) {}
+    return new Set();
+  }
+
+  let lifetimeGuessed = loadLifetimeGuessed();
+
+  function syncAndReload() {
+    const fresh = loadLifetimeGuessed();
+    if (fresh.size !== lifetimeGuessed.size) window.location.reload();
+  }
+
+  window.addEventListener('pageshow', (e) => { if (e.persisted) window.location.reload(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncAndReload(); });
+  window.addEventListener('storage', (e) => {
+    if (['cityChainLifetimeGuessed', 'cityChainHighScore', 'cityChainTimedHighScore'].includes(e.key)) window.location.reload();
+  });
+
+  document.getElementById('resetAchievementsBtn').addEventListener('click', () => {
+    if (confirm('Reset all your collected cities, streaks, and achievements? This cannot be undone.')) {
+      localStorage.removeItem('cityChainLifetimeGuessed');
+      localStorage.removeItem('cityChainHighScore');
+      localStorage.removeItem('cityChainTimedHighScore');
+      window.location.reload();
+    }
+  });
+
+  const highScoreInfinite = parseInt(localStorage.getItem('cityChainHighScore') || '0', 10);
+  const highScoreTimed = parseInt(localStorage.getItem('cityChainTimedHighScore') || '0', 10);
+  const ISO_OVERRIDES = { 'XW': 'PS', 'XG': 'PS', 'XR': 'SJ' };
+
+  function isoToFlag(iso) {
+    if (!iso || iso.length !== 2) return '';
+    const code = ISO_OVERRIDES[iso.toUpperCase()] || iso.toUpperCase();
+    const codePoints = code.split('').map(c => 0x1F1E6 + (c.charCodeAt(0) - 65));
+    return String.fromCodePoint(...codePoints);
+  }
+
+  function buildMilestoneGrid(container, thresholds, currentValue, suffix) {
+    container.innerHTML = '';
+    thresholds.forEach(t => {
+      const complete = currentValue >= t;
+      const div = document.createElement('div');
+      div.className = 'milestone-badge' + (complete ? ' complete' : '');
+      div.innerHTML = '<span class="num">' + t.toLocaleString() + '</span>' + suffix + (complete ? ' \u2713' : '');
+      container.appendChild(div);
+    });
+  }
+
+  buildMilestoneGrid(document.getElementById('lifetimeMilestones'), [50, 100, 250, 500, 1000, 2500], lifetimeGuessed.size, ' cities');
+  buildMilestoneGrid(document.getElementById('infiniteMilestones'), [10, 25, 50, 100, 200, 500], highScoreInfinite, ' streak');
+  buildMilestoneGrid(document.getElementById('sprintMilestones'), [10, 20, 30, 50, 75, 100], highScoreTimed, ' in 5 min');
+
+  function renderListEntry(city, i, found) {
+    const entry = document.createElement('div');
+    entry.className = 'tier-entry' + (found ? '' : ' unfound');
+    entry.innerHTML =
+      '<span class="rank">#' + (i + 1) + '</span>' +
+      '<span class="flag">' + isoToFlag(city.iso) + '</span>' +
+      '<span class="name">' + (found ? city.c + ', ' + city.co : '?????') + '</span>' +
+      '<span class="pop">' + (city.p ? city.p.toLocaleString() : 'unknown') + '</span>';
+    return entry;
+  }
+
+  // --- Alphabet Checklists ---
+  const alphabetBtnRow = document.getElementById('alphabetButtonsRow');
+  const alphabetListsEl = document.getElementById('alphabetListsContainer');
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  
+  const citiesByLetter = {};
+  alphabet.forEach(l => citiesByLetter[l] = []);
+  CITIES_DATA.forEach(c => {
+    const fl = firstLetterOf(c.a);
+    if (citiesByLetter[fl]) citiesByLetter[fl].push(c);
+  });
+
+  alphabet.forEach(letter => {
+    const top10 = citiesByLetter[letter].sort((a, b) => b.p - a.p).slice(0, 10);
+    if (top10.length === 0) return;
+
+    const foundCount = top10.filter(c => lifetimeGuessed.has(c.a.toLowerCase().trim())).length;
+    const complete = foundCount === top10.length;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tier-btn' + (complete ? ' complete' : '');
+    btn.innerHTML = letter.toUpperCase() + (complete ? ' \u2713' : '') +
+      '<span class="tier-progress">' + foundCount + '/10</span>';
+
+    const list = document.createElement('div');
+    list.className = 'tier-list';
+    
+    top10.forEach((city, i) => {
+      list.appendChild(renderListEntry(city, i, lifetimeGuessed.has(city.a.toLowerCase().trim())));
+    });
+
+    btn.addEventListener('click', () => {
+      const wasOpen = list.classList.contains('open');
+      document.querySelectorAll('.tier-list.open').forEach(el => el.classList.remove('open'));
+      if (!wasOpen) list.classList.add('open');
+    });
+
+    alphabetBtnRow.appendChild(btn);
+    alphabetListsEl.appendChild(list);
+  });
+
+  // --- Regional Checklists ---
+  const REGIONS = [
+    { key: 'world', label: 'world', tiers: [10, 25, 50, 100, 250, 500, 1000] },
+    { key: 'NA', label: 'north america', tiers: [10, 25, 50, 100, 250] },
+    { key: 'SA', label: 'south america', tiers: [10, 25, 50, 100, 250] },
+    { key: 'EU', label: 'europe', tiers: [10, 25, 50, 100, 250] },
+    { key: 'AS', label: 'asia', tiers: [10, 25, 50, 100, 250] },
+    { key: 'AF', label: 'africa', tiers: [10, 25, 50, 100, 250] },
+    { key: 'OC', label: 'oceania', tiers: [10, 25, 50, 100, 250] }
+  ];
+
+  const regionBlocksEl = document.getElementById('regionBlocks');
+
+  REGIONS.forEach(region => {
+    let pool = CITIES_DATA;
+    if (region.key !== 'world') pool = CITIES_DATA.filter(c => c.cont === region.key);
+    const sorted = [...pool].sort((a, b) => b.p - a.p);
+
+    const block = document.createElement('div');
+    block.className = 'region-block';
+    const title = document.createElement('div');
+    title.className = 'region-title';
+    title.textContent = region.label;
+    block.appendChild(title);
+
+    const tierRow = document.createElement('div');
+    tierRow.className = 'tier-row';
+    block.appendChild(tierRow);
+
+    region.tiers.forEach(n => {
+      const topN = sorted.slice(0, n);
+      const foundCount = topN.filter(c => lifetimeGuessed.has(c.a.toLowerCase().trim())).length;
+      const complete = foundCount === topN.length && topN.length > 0;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tier-btn' + (complete ? ' complete' : '');
+      btn.innerHTML = 'top ' + n + (complete ? ' \u2713' : '') +
+        '<span class="tier-progress">' + foundCount + '/' + topN.length + '</span>';
+
+      const list = document.createElement('div');
+      list.className = 'tier-list';
+      topN.forEach((city, i) => list.appendChild(renderListEntry(city, i, lifetimeGuessed.has(city.a.toLowerCase().trim()))));
+
+      btn.addEventListener('click', () => {
+        const wasOpen = list.classList.contains('open');
+        document.querySelectorAll('.tier-list.open').forEach(el => el.classList.remove('open'));
+        if (!wasOpen) list.classList.add('open');
+      });
+
+      tierRow.appendChild(btn);
+      block.appendChild(list);
+    });
+    regionBlocksEl.appendChild(block);
+  });
+</script>
+
+</body>
+</html>

@@ -292,6 +292,8 @@
 
 <main>
   <a class="back-link" href="index.html">&larr; back to home</a>
+  <a class="back-link" href="achievements.html" style="margin-left: 1rem;">achievements &rarr;</a>
+  <a class="back-link" href="stats.html" style="margin-left: 1rem;">stats &rarr;</a>
   <h1>city chain</h1>
   <p class="subtitle">name a real city that starts with the last letter of the previous one. no repeats.</p>
 
@@ -391,16 +393,65 @@
   const LIFELINE_COUNT = 1;
   const GAME_DURATION = 300; 
 
+  function loadLifetimeGuessed() {
+    const raw = localStorage.getItem('cityChainLifetimeGuessed');
+    if (!raw) return new Set();
+    try {
+      let parsed = JSON.parse(raw);
+      while (typeof parsed === 'string') {
+        try { parsed = JSON.parse(parsed); } catch(e) { break; }
+      }
+      if (Array.isArray(parsed)) {
+        return new Set(parsed.filter(x => typeof x === 'string' && x.length > 1));
+      }
+    } catch (e) {
+      console.error("Data parse error resolved.");
+    }
+    return new Set();
+  }
+
+  let lifetimeGuessed = loadLifetimeGuessed();
+  let highScoreInfinite = parseInt(localStorage.getItem('cityChainHighScore') || '0', 10);
+  let highScoreTimed = parseInt(localStorage.getItem('cityChainTimedHighScore') || '0', 10);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      lifetimeGuessed = loadLifetimeGuessed();
+      highScoreInfinite = parseInt(localStorage.getItem('cityChainHighScore') || '0', 10);
+      highScoreTimed = parseInt(localStorage.getItem('cityChainTimedHighScore') || '0', 10);
+      updateHighScoreDisplay();
+    }
+  });
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'cityChainLifetimeGuessed') {
+      lifetimeGuessed = loadLifetimeGuessed();
+    }
+    if (e.key === 'cityChainHighScore' || e.key === 'cityChainTimedHighScore') {
+      highScoreInfinite = parseInt(localStorage.getItem('cityChainHighScore') || '0', 10);
+      highScoreTimed = parseInt(localStorage.getItem('cityChainTimedHighScore') || '0', 10);
+      updateHighScoreDisplay();
+    }
+    if (e.key === 'cityChainLifetimeGuessed' && !localStorage.getItem(e.key)) {
+      window.location.reload();
+    }
+  });
+
+  function recordLifetimeGuess(key) {
+    if (lifetimeGuessed.has(key)) return;
+    const fresh = loadLifetimeGuessed();
+    fresh.add(key);
+    lifetimeGuessed = fresh;
+    localStorage.setItem('cityChainLifetimeGuessed', JSON.stringify(Array.from(lifetimeGuessed)));
+  }
+
   let currentCityEntry = null;
   let usedKeys = new Set();
   let score = 0;
-  
-  let highScoreInfinite = parseInt(localStorage.getItem('cityChainHighScore') || '0', 10);
-  let highScoreTimed = parseInt(localStorage.getItem('cityChainTimedHighScore') || '0', 10);
+  let roundOver = false;
   
   let gamesPlayed = parseInt(localStorage.getItem('cityChainGamesPlayed') || '0', 10);
   let pendingStartCity = null;
-  let roundOver = false;
 
   let gameMode = 'infinite';
   let endTime = null;
@@ -448,6 +499,11 @@
     const codePoints = code.split('').map(c => 0x1F1E6 + (c.charCodeAt(0) - 65));
     return String.fromCodePoint(...codePoints);
   }
+  
+  function firstLetterOf(name) {
+    const cleaned = name.replace(/[^a-zA-Z]/g, '');
+    return cleaned ? cleaned.charAt(0).toLowerCase() : '';
+  }
 
   function lastLetterOf(name) {
     const cleaned = name.replace(/[^a-zA-Z]/g, '');
@@ -487,14 +543,38 @@
   function endTimedGame() {
     roundOver = true;
     setGuessLocked(true);
-    setMessage('time\'s up! final score: ' + score + '.', 'bad');
+    
+    let banner = 'time\'s up! final score: ' + score + '.';
+    
+    // Calculate what the user missed
+    if (usedKeys.size > 0 && score > 0) {
+      const requiredLetter = lastLetterOf(currentCityEntry.a);
+      const [answer] = getTopCandidates(requiredLetter, 1);
+
+      if (answer) {
+        banner = 'time\'s up! the answer was "' + answer.c + '" (' +
+          isoToFlag(answer.iso) + ' ' + answer.co + '). final score: ' + score + '.';
+      } else {
+        banner = 'time\'s up! no valid cities were left for that letter anyway! final score: ' + score + '.';
+      }
+    }
+    
+    setMessage(banner, 'bad');
     saveSession();
   }
 
   function renderCurrentCity() {
     const name = currentCityEntry.c;
-    const letter = lastLetterOf(currentCityEntry.a);
-    const idx = name.toLowerCase().lastIndexOf(letter);
+    
+    let idx = -1;
+    for (let i = name.length - 1; i >= 0; i--) {
+      const ch = name.charAt(i);
+      if (ch.toLowerCase() !== ch.toUpperCase()) {
+        idx = i;
+        break;
+      }
+    }
+
     if (idx === -1) {
       currentCityEl.textContent = name;
     } else {
@@ -503,6 +583,7 @@
         '<span class="next-letter">' + name.slice(idx, idx + 1) + '</span>' +
         name.slice(idx + 1);
     }
+    
     currentCountryEl.textContent =
       isoToFlag(currentCityEntry.iso) + ' ' + currentCityEntry.co +
       ' \u2014 pop. ' + (currentCityEntry.p ? currentCityEntry.p.toLocaleString() : 'unknown');
@@ -563,7 +644,7 @@
     let best = null;
     let bestDist = Infinity;
     for (const key of allKeys) {
-      if (key.charAt(0) !== requiredLetter) continue;
+      if (firstLetterOf(key) !== requiredLetter) continue;
       if (usedKeys.has(key)) continue;
       const dist = levenshtein(guessKey, key);
       if (dist < bestDist) {
@@ -580,7 +661,7 @@
   function getTopCandidates(requiredLetter, count) {
     const matches = [];
     for (const key of allKeys) {
-      if (key.charAt(0) !== requiredLetter) continue;
+      if (firstLetterOf(key) !== requiredLetter) continue;
       if (usedKeys.has(key)) continue;
       matches.push(cityIndex.get(key)[0]);
     }
@@ -644,6 +725,8 @@
   }
 
   function resumeSession(session) {
+    clearInterval(timerInterval);
+
     currentCityEntry = session.currentCityEntry;
     usedKeys = new Set(session.usedKeys);
     score = session.score;
@@ -680,8 +763,20 @@
       setMessage('welcome back! pick a lifeline or keep guessing.', 'good');
       if (gameMode === 'timed' && timerStarted) startTimer();
     } else if (roundOver) {
+      lifelinePopup.style.display = 'none';
       setGuessLocked(true);
-      setMessage('time\'s up! final score: ' + score + '.', 'bad');
+      
+      let banner = 'time\'s up! final score: ' + score + '.';
+      if (usedKeys.size > 0 && score > 0) {
+        const requiredLetter = lastLetterOf(currentCityEntry.a);
+        const [answer] = getTopCandidates(requiredLetter, 1);
+        if (answer) {
+          banner = 'time\'s up! the answer was "' + answer.c + '" (' + isoToFlag(answer.iso) + ' ' + answer.co + '). final score: ' + score + '.';
+        } else {
+          banner = 'time\'s up! no valid cities were left for that letter anyway! final score: ' + score + '.';
+        }
+      }
+      setMessage(banner, 'bad');
     } else {
       lifelinePopup.style.display = 'none';
       setGuessLocked(false);
@@ -721,7 +816,10 @@
     currentCityEntry = pendingStartCity || pickRandomStartingCity();
     pendingStartCity = null;
 
-    usedKeys.add(currentCityEntry.a.toLowerCase().trim());
+    const startKey = currentCityEntry.a.toLowerCase().trim();
+    usedKeys.add(startKey);
+    recordLifetimeGuess(startKey); 
+
     scoreEl.textContent = score;
     renderCurrentCity();
     renderUsedList();
@@ -738,7 +836,8 @@
     if (gameMode === 'timed') {
       timeRemaining = GAME_DURATION;
       timerStarted = false;
-      updateTimerDisplay(); // Ensures it says 5:00 right away
+      endTime = null;
+      updateTimerDisplay();
     }
     
     saveSession();
@@ -747,6 +846,7 @@
   window.switchMode = function(newMode) {
     if (newMode === gameMode) return;
     saveSession(); 
+    clearInterval(timerInterval);
     
     gameMode = newMode;
     const savedSession = loadSession(gameMode);
@@ -758,7 +858,6 @@
     }
   };
 
-  // NEW: Start the timer as soon as the user starts typing
   guessInput.addEventListener('input', () => {
     if (gameMode === 'timed' && !timerStarted && !roundOver) {
       timerStarted = true;
@@ -776,7 +875,9 @@
 
     const key = raw.toLowerCase();
     const requiredLetter = lastLetterOf(currentCityEntry.a);
-    if (key.charAt(0) !== requiredLetter) {
+    const guessFirstLetter = firstLetterOf(key);
+
+    if (!guessFirstLetter || guessFirstLetter !== requiredLetter) {
       setMessage('needs to start with "' + requiredLetter.toUpperCase() + '".', 'bad');
       return;
     }
@@ -797,6 +898,7 @@
     }
 
     usedKeys.add(key);
+    recordLifetimeGuess(key);
     currentCityEntry = cityIndex.get(key)[0];
     score += 1;
     scoreEl.textContent = score;
@@ -819,7 +921,6 @@
 
     if (score > 0 && score % 50 === 0) {
       lifelinePopup.style.display = 'block';
-      // User can continue guessing while the popup is open
       setMessage('nice, ' + currentCityEntry.c + ' it is. Pick a lifeline to restore!', 'good');
     } else {
       setMessage('nice, ' + currentCityEntry.c + ' it is.', 'good');

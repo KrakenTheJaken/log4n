@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>stats :: city chain</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+  :root {
+    --salmon: #FA8072;
+    --salmon-dark: #e8604f;
+    --salmon-light: #fdb8b0;
+    --cream: #fff8f5;
+    --ink: #2a1a17;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+  }
+
+  .header-actions {
+    margin-bottom: 1.25rem;
+  }
+
+  a.nav-link {
+    font-size: 0.8rem;
+    color: var(--salmon-dark);
+    text-decoration: none;
+    margin-right: 1rem;
+  }
+
+  a.nav-link:hover { text-decoration: underline; }
+
+  h1 {
+    font-size: 1.4rem;
+    color: var(--salmon-dark);
+    margin: 0 0 0.25rem;
+  }
+
+  .subtitle { font-size: 0.85rem; margin: 0 0 1.25rem; }
+
+  .panel {
+    background: #ffffff;
+    border: 1px solid var(--salmon-light);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .panel h2 {
+    font-size: 1.05rem;
+    font-weight: bold;
+    margin: 0 0 0.6rem;
+    color: var(--salmon-dark);
+    border-bottom: 1px solid var(--salmon-light);
+    padding-bottom: 0.4rem;
+  }
+  
+  .hero-stat {
+    text-align: center;
+    padding: 1rem 0;
+  }
+
+  .hero-stat .val {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--salmon-dark);
+  }
+
+  .hero-stat .label {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-top: 0.25rem;
+  }
+
+  /* Map Container */
+  #map {
+    height: 350px;
+    width: 100%;
+    background: #e0e0e0; /* Fallback color */
+    border: 1px solid var(--salmon-light);
+    border-radius: 4px;
+    z-index: 1; /* Keep map controls under dropdowns if you ever add them */
+  }
+
+  /* Force Leaflet popups to use our font */
+  .leaflet-popup-content-wrapper {
+    font-family: Verdana, Geneva, sans-serif;
+    border-radius: 4px;
+    color: var(--ink);
+  }
+
+  .bar-chart { margin-top: 1rem; }
+  
+  .bar-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .bar-label {
+    width: 100px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-align: right;
+    padding-right: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    background: var(--cream);
+    border: 1px solid var(--salmon-light);
+    height: 1.2rem;
+    position: relative;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    background: var(--salmon);
+    height: 100%;
+    width: 0%;
+    transition: width 0.5s ease-out;
+  }
+
+  .bar-value {
+    width: 50px;
+    font-size: 0.75rem;
+    text-align: left;
+    padding-left: 0.8rem;
+    opacity: 0.8;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="header-actions">
+    <a class="nav-link" href="game.html">&larr; game</a>
+    <a class="nav-link" href="achievements.html">&larr; achievements</a>
+  </div>
+  
+  <h1>your analytics</h1>
+  <p class="subtitle">a visual breakdown of your geographic footprint.</p>
+
+  <div class="panel">
+    <h2>global footprint</h2>
+    <div class="hero-stat">
+      <div class="val" id="totalPopulation">0</div>
+      <div class="label">Total Population of Cities Found</div>
+    </div>
+  </div>
+
+  <div class="panel" style="padding-bottom: 0.5rem;">
+    <h2>interactive map</h2>
+    <p class="desc" style="margin-bottom: 0.5rem;">every city you've guessed. circle size represents population.</p>
+    <div id="map"></div>
+  </div>
+
+  <div class="panel">
+    <h2>continent breakdown</h2>
+    <div class="bar-chart" id="continentChart"></div>
+  </div>
+
+  <div class="panel">
+    <h2>population demographics</h2>
+    <div class="bar-chart" id="popChart"></div>
+  </div>
+
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="cities.js"></script>
+<script>
+  function loadLifetimeGuessed() {
+    const raw = localStorage.getItem('cityChainLifetimeGuessed');
+    if (!raw) return new Set();
+    try {
+      let parsed = JSON.parse(raw);
+      while (typeof parsed === 'string') {
+        try { parsed = JSON.parse(parsed); } catch(e) { break; }
+      }
+      if (Array.isArray(parsed)) {
+        return new Set(parsed.filter(x => typeof x === 'string' && x.length > 1));
+      }
+    } catch (e) {}
+    return new Set();
+  }
+
+  const lifetimeGuessed = loadLifetimeGuessed();
+  
+  // Index cities for fast lookup
+  const cityIndex = new Map();
+  CITIES_DATA.forEach(entry => {
+    const key = entry.a.toLowerCase().trim();
+    if (!cityIndex.has(key)) cityIndex.set(key, []);
+    cityIndex.get(key).push(entry);
+  });
+
+  // Calculate Data
+  let totalPop = 0;
+  const continentCounts = { 'AS': 0, 'EU': 0, 'NA': 0, 'SA': 0, 'AF': 0, 'OC': 0 };
+  const popBuckets = { '1M+': 0, '500k-1M': 0, '100k-500k': 0, '10k-100k': 0, '<10k': 0 };
+  
+  const foundCitiesData = []; // Array to hold full city objects for the map
+
+  lifetimeGuessed.forEach(key => {
+    const cities = cityIndex.get(key);
+    if (!cities) return;
+    const city = cities[0]; // Assuming largest match
+
+    foundCitiesData.push(city);
+    totalPop += city.p || 0;
+    
+    if (continentCounts[city.cont] !== undefined) continentCounts[city.cont]++;
+
+    if (city.p >= 1000000) popBuckets['1M+']++;
+    else if (city.p >= 500000) popBuckets['500k-1M']++;
+    else if (city.p >= 100000) popBuckets['100k-500k']++;
+    else if (city.p >= 10000) popBuckets['10k-100k']++;
+    else popBuckets['<10k']++;
+  });
+
+  document.getElementById('totalPopulation').textContent = totalPop.toLocaleString();
+
+  // --- INITIALIZE THE MAP ---
+  // Centered somewhat globally, zoom level 2
+  const map = L.map('map').setView([20, 0], 2);
+
+  // Use a minimalist, light-colored basemap so the data points pop out
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
+  }).addTo(map);
+
+  // Add a circle for every city you've found
+  foundCitiesData.forEach(city => {
+    // Only plot if the city data actually has coordinates
+    if (city.lat !== undefined && city.lng !== undefined) {
+      
+      // Calculate radius. Square root scales areas properly so massive cities don't swallow the map.
+      // Math.max(3, ...) ensures even tiny villages are at least 3 pixels wide so you can click them.
+      const radius = Math.max(3, Math.sqrt(city.p) / 400); 
+
+      L.circleMarker([city.lat, city.lng], {
+        radius: radius,
+        fillColor: '#e8604f',    // Your salmon-dark color
+        color: '#2a1a17',        // Your ink color for the border
+        weight: 1,
+        opacity: 0.8,
+        fillOpacity: 0.6
+      })
+      .addTo(map)
+      .bindPopup(`<b>${city.c}, ${city.co}</b><br>Population: ${city.p.toLocaleString()}`);
+    }
+  });
+  // --------------------------
+
+  function drawChart(containerId, dataObj, labelsMap) {
+    const container = document.getElementById(containerId);
+    let maxVal = Math.max(...Object.values(dataObj));
+    if (maxVal === 0) maxVal = 1; // Prevent div by zero
+
+    for (const [key, val] of Object.entries(dataObj)) {
+      const pct = (val / maxVal) * 100;
+      
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `
+        <div class="bar-label">${labelsMap[key] || key}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: ${pct}%"></div>
+        </div>
+        <div class="bar-value">${val}</div>
+      `;
+      container.appendChild(row);
+    }
+  }
+
+  const contNames = {
+    'AS': 'Asia', 'EU': 'Europe', 'NA': 'N. America', 
+    'SA': 'S. America', 'AF': 'Africa', 'OC': 'Oceania'
+  };
+
+  drawChart('continentChart', continentCounts, contNames);
+  drawChart('popChart', popBuckets, {
+    '1M+': 'Over 1 Million',
+    '500k-1M': '500k - 1M',
+    '100k-500k': '100k - 500k',
+    '10k-100k': '10k - 100k',
+    '<10k': 'Under 10k'
+  });
+</script>
+
+</body>
+</html>
