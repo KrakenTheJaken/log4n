@@ -1,2 +1,8 @@
-"worldcities.csv" 
-"test.py"
+# Data and local scripts
+worldcities.csv
+test.py
+
+.env
+.wrangler/
+.partykit/
+node_modules/

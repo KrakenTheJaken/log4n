@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>city chain :: versus</title>
+<style>
+  :root { --salmon: #FA8072; --salmon-dark: #e8604f; --salmon-light: #fdb8b0; --cream: #fff8f5; --ink: #2a1a17; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--cream); color: var(--ink); font-family: Verdana, Geneva, sans-serif; font-size: 13px; min-height: 100vh; }
+  main { max-width: 480px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+  h1 { font-size: 1.4rem; color: var(--salmon-dark); margin: 0 0 0.25rem; }
+  .subtitle { font-size: 0.85rem; margin: 0 0 1rem; }
+  a.back-link { display: inline-block; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--salmon-dark); }
+
+  .panel { background: #ffffff; border: 1px solid var(--salmon-light); padding: 1.25rem 1.5rem; margin-bottom: 1rem; position: relative; }
+
+  .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 0.85rem; }
+  .stat-box { text-align: center; padding: 0.5rem; border-radius: 6px; border: 1px solid transparent; transition: 0.2s; flex: 1; }
+  .stat-box.active { background: var(--salmon-light); border: 1px solid var(--salmon-dark); }
+  
+  .stat-label { color: var(--ink); opacity: 0.7; font-size: 0.75rem; font-weight: bold; margin-bottom: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+  .stat-value { font-size: 1.4rem; font-weight: bold; color: var(--salmon-dark); }
+  .timer-value { font-size: 1.8rem; font-weight: bold; color: var(--ink); transition: color 0.2s;}
+  .timer-value.panic { color: red; }
+
+  .current-city { text-align: center; margin: 0.5rem 0 1.25rem; }
+  .current-city .label { font-size: 0.75rem; opacity: 0.7; }
+  .current-city .name { font-size: 1.6rem; font-weight: bold; }
+  .current-city .name .next-letter { color: var(--salmon-dark); text-decoration: underline; }
+  .current-city .country { font-size: 0.85rem; margin-top: 0.2rem; opacity: 0.8; }
+
+  form { display: flex; gap: 0.5rem; }
+  input[type="text"] { flex: 1; padding: 0.5rem 0.6rem; border: 1px solid var(--salmon-light); font-family: Verdana, Geneva, sans-serif; font-size: 0.95rem; background: var(--cream); color: var(--ink); }
+  input[type="text"]:focus { outline: 1px solid var(--salmon-dark); }
+  input[type="text"]:disabled { opacity: 0.6; background: #eee; cursor: not-allowed; }
+
+  button { font-family: Verdana, Geneva, sans-serif; font-weight: bold; font-size: 0.85rem; background: var(--salmon); color: var(--cream); border: 1px solid var(--salmon-dark); padding: 0.5rem 1rem; cursor: pointer; }
+  button:hover:not(:disabled) { background: var(--salmon-dark); }
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  .message { margin-top: 0.75rem; font-size: 0.85rem; min-height: 1.2rem; text-align: center; font-weight: bold;}
+  .message.bad { color: var(--salmon-dark); }
+  .message.good { color: #4a7a3d; }
+
+  .used-list { font-size: 0.8rem; line-height: 1.6; max-height: 140px; overflow-y: auto; }
+  .used-list .entry { border-bottom: 1px dotted var(--salmon-light); padding: 0.2rem 0; display: flex; justify-content: space-between;}
+  .used-list .entry:last-child { border-bottom: none; }
+
+  .invite-banner { background: var(--cream); border: 1px dashed var(--salmon-dark); padding: 0.8rem; text-align: center; margin-bottom: 1rem; }
+  .invite-banner input { width: 100%; text-align: center; border: none; background: transparent; font-weight: bold; color: var(--salmon-dark); cursor: pointer; padding: 0; outline: none; font-size: 0.85rem; transition: color 0.2s;}
+
+  /* Overlay Modal for Invites */
+  #nameOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 248, 245, 0.85); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; }
+  .name-box { background: #fff; padding: 2rem; border: 2px solid var(--salmon-dark); text-align: center; width: 90%; max-width: 320px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+  .name-box h2 { margin: 0 0 1rem 0; color: var(--salmon-dark); font-size: 1.2rem; }
+</style>
+</head>
+<body>
+
+<div id="nameOverlay" style="display: none;">
+  <div class="name-box">
+    <h2>You've been invited!</h2>
+    <div style="font-size: 0.85rem; margin-bottom: 1rem;">Enter a display name to join the match.</div>
+    <form id="modalForm" style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <input type="text" id="modalInput" required placeholder="Your Name" maxlength="15" style="text-align: center; font-weight: bold;">
+      <button type="submit" style="width: 100%;">Join Room</button>
+    </form>
+  </div>
+</div>
+
+<main>
+  <a class="back-link" href="game.html">&larr; back to game</a>
+  <h1>city chain :: versus</h1>
+  <p class="subtitle">head to head. 15 seconds per turn.</p>
+
+  <div class="panel">
+    <div class="stat-row">
+      <div class="stat-box" id="p1-box">
+        <div class="stat-label" id="p1-name">Waiting...</div>
+        <div class="stat-value" id="p1-score">0</div>
+      </div>
+      <div class="stat-box" style="border: none; background: transparent;">
+        <div class="stat-label">time left</div>
+        <div class="timer-value" id="timerDisplay">15</div>
+      </div>
+      <div class="stat-box" id="p2-box">
+        <div class="stat-label" id="p2-name">Waiting...</div>
+        <div class="stat-value" id="p2-score">0</div>
+      </div>
+    </div>
+
+    <div class="invite-banner" id="inviteBanner">
+      <div class="stat-label" style="margin-bottom: 0.4rem;">CLICK TO COPY INVITE LINK:</div>
+      <input type="text" id="inviteLink" readonly>
+    </div>
+
+    <div class="current-city">
+      <div class="label" id="turnStatus">Waiting for connection...</div>
+      <div class="name" id="currentCity">&mdash;</div>
+      <div class="country" id="currentCountry"></div>
+    </div>
+
+    <form id="guessForm" autocomplete="off">
+      <input type="text" id="guessInput" placeholder="Waiting for match..." disabled />
+      <button type="submit" id="guessBtn" disabled>guess</button>
+    </form>
+
+    <button id="rematchBtn" type="button" style="display:none; width:100%; margin-top:1rem; background:#4a7a3d; border-color: #3b6131;">play again</button>
+
+    <div class="message" id="messageBox"></div>
+  </div>
+
+  <div class="panel">
+    <div class="stat-label" style="margin-bottom:0.5rem;">cities used this round</div>
+    <div class="used-list" id="usedList"></div>
+  </div>
+</main>
+
+<script>
+    function loadLifetimeGuessed() {
+      const raw = localStorage.getItem('cityChainLifetimeGuessed');
+      if (!raw) return new Set();
+      try {
+        let parsed = JSON.parse(raw);
+        while (typeof parsed === 'string') { try { parsed = JSON.parse(parsed); } catch(e) { break; } }
+        if (Array.isArray(parsed)) return new Set(parsed.filter(x => typeof x === 'string' && x.length > 1));
+      } catch (e) {}
+      return new Set();
+    }
+
+    function recordLifetimeGuess(key) {
+      const fresh = loadLifetimeGuessed();
+      if (fresh.has(key)) return;
+      fresh.add(key);
+      localStorage.setItem('cityChainLifetimeGuessed', JSON.stringify(Array.from(fresh)));
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get('room');
+    let playerName = urlParams.get('name');
+    
+    if (!roomId) window.location.href = "game.html";
+
+    const socket = new WebSocket(`wss://city-chain-server.n8c278skqk.workers.dev/party/${roomId}`);
+    // --- Modal Logic ---
+    if (!playerName) {
+      document.getElementById('nameOverlay').style.display = 'flex';
+      setTimeout(() => document.getElementById('modalInput').focus(), 100);
+    }
+
+    document.getElementById('modalForm').onsubmit = (e) => {
+      e.preventDefault();
+      playerName = document.getElementById('modalInput').value.trim();
+      document.getElementById('nameOverlay').style.display = 'none';
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ action: "set_name", name: playerName }));
+      }
+    };
+
+    // --- Direct Room Link Generation ---
+    const inviteLinkInput = document.getElementById('inviteLink');
+    const currentBaseUrl = window.location.href.split('?')[0];
+    inviteLinkInput.value = `${currentBaseUrl}?room=${roomId}`;
+    
+    inviteLinkInput.onclick = () => { 
+      inviteLinkInput.select(); 
+      navigator.clipboard.writeText(inviteLinkInput.value); 
+      
+      const originalValue = inviteLinkInput.value;
+      inviteLinkInput.value = "Copied to clipboard!";
+      inviteLinkInput.style.color = "#4a7a3d";
+      
+      setTimeout(() => {
+        if (inviteLinkInput.value === "Copied to clipboard!") {
+          inviteLinkInput.value = originalValue;
+          inviteLinkInput.style.color = "var(--salmon-dark)";
+        }
+      }, 1500);
+    };
+
+    let myPlayerId = null;
+    let originalMyIndex = null; 
+    let uiTimerInterval = null;
+
+    socket.onopen = () => {
+      if (playerName) socket.send(JSON.stringify({ action: "set_name", name: playerName }));
+    };
+
+    const ISO_OVERRIDES = { 'XW': 'PS', 'XG': 'PS', 'XR': 'SJ' };
+    function isoToFlag(iso) {
+      if (!iso || iso.length !== 2) return '';
+      const code = ISO_OVERRIDES[iso.toUpperCase()] || iso.toUpperCase();
+      const codePoints = code.split('').map(c => 0x1F1E6 + (c.charCodeAt(0) - 65));
+      return String.fromCodePoint(...codePoints);
+    }
+
+    function showMessage(msg, type) {
+      const box = document.getElementById('messageBox');
+      box.textContent = msg;
+      box.className = "message " + type;
+      setTimeout(() => box.textContent = "", 4000);
+    }
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "welcome") myPlayerId = data.playerId;
+      if (data.type === "guess_success") recordLifetimeGuess(data.key);
+      if (data.type === "error") showMessage(data.message, "bad");
+
+      if (data.type === "state_update") {
+        const state = data.state;
+        document.getElementById('turnStatus').textContent = state.message;
+        
+        let myCurrentIndex = state.players.findIndex(p => p.id === myPlayerId);
+        if (originalMyIndex === null && myCurrentIndex !== -1) originalMyIndex = myCurrentIndex;
+        
+        const myDisplayIndex = myCurrentIndex !== -1 ? myCurrentIndex : 0;
+        const oppDisplayIndex = myDisplayIndex === 0 ? 1 : 0;
+        const myScoreIndex = originalMyIndex !== null ? originalMyIndex : 0;
+        const oppScoreIndex = myScoreIndex === 0 ? 1 : 0;
+
+        const myPlayer = state.players[myDisplayIndex];
+        const oppPlayer = state.players[oppDisplayIndex];
+
+        document.getElementById('p1-name').textContent = myPlayer ? myPlayer.name + " (You)" : "Waiting...";
+        document.getElementById('p2-name').textContent = oppPlayer ? oppPlayer.name : "Waiting...";
+
+        if (state.scores) {
+          document.getElementById('p1-score').textContent = state.scores[myScoreIndex] !== undefined ? state.scores[myScoreIndex] : 0;
+          document.getElementById('p2-score').textContent = state.scores[oppScoreIndex] !== undefined ? state.scores[oppScoreIndex] : 0;
+        }
+
+        if (state.status === "playing") {
+          document.getElementById('inviteBanner').style.display = 'none';
+          document.getElementById('rematchBtn').style.display = 'none';
+        }
+
+        if (state.currentCityEntry) {
+          const name = state.currentCityEntry.c;
+          let idx = -1;
+          for (let i = name.length - 1; i >= 0; i--) {
+            const ch = name.charAt(i);
+            if (ch.toLowerCase() !== ch.toUpperCase()) { idx = i; break; }
+          }
+          
+          if (idx !== -1) document.getElementById('currentCity').innerHTML = name.slice(0, idx) + '<span class="next-letter">' + name.slice(idx, idx + 1) + '</span>' + name.slice(idx + 1);
+          else document.getElementById('currentCity').textContent = name;
+          document.getElementById('currentCountry').textContent = isoToFlag(state.currentCityEntry.iso) + ' ' + state.currentCityEntry.co + ' — pop. ' + (state.currentCityEntry.p ? state.currentCityEntry.p.toLocaleString() : 'unknown');
+        }
+
+        if (state.status === "game_over") {
+          document.getElementById('rematchBtn').style.display = 'block';
+          document.getElementById('rematchBtn').textContent = "play again";
+          document.getElementById('rematchBtn').disabled = false;
+          clearInterval(uiTimerInterval);
+          document.getElementById('timerDisplay').textContent = "0";
+          document.getElementById('timerDisplay').classList.remove('panic');
+          document.getElementById('guessInput').disabled = true;
+          document.getElementById('guessBtn').disabled = true;
+          document.getElementById('p1-box').classList.remove('active');
+          document.getElementById('p2-box').classList.remove('active');
+        }
+
+        if (state.status === "playing") {
+          const isMyTurn = (myPlayerId === state.players[state.currentTurn].id);
+          document.getElementById('guessInput').disabled = !isMyTurn;
+          document.getElementById('guessBtn').disabled = !isMyTurn;
+          
+          if(isMyTurn) {
+            document.getElementById('guessInput').placeholder = "type a city name...";
+            document.getElementById('guessInput').focus();
+          } else {
+            document.getElementById('guessInput').placeholder = "opponent's turn...";
+          }
+
+          document.getElementById('p1-box').className = state.currentTurn === myDisplayIndex ? "stat-box active" : "stat-box";
+          document.getElementById('p2-box').className = state.currentTurn === oppDisplayIndex ? "stat-box active" : "stat-box";
+          
+          clearInterval(uiTimerInterval);
+          uiTimerInterval = setInterval(() => {
+            const timeLeft = Math.max(0, Math.ceil((state.turnExpires - Date.now()) / 1000));
+            document.getElementById('timerDisplay').textContent = timeLeft;
+            if(timeLeft <= 5) document.getElementById('timerDisplay').classList.add('panic');
+            else document.getElementById('timerDisplay').classList.remove('panic');
+          }, 100);
+        }
+
+        const list = document.getElementById('usedList');
+        list.innerHTML = '';
+        state.usedCitiesData.forEach(c => {
+          list.innerHTML += `<div class="entry"><span>${isoToFlag(c.iso)} ${c.c}</span> <span style="opacity:0.5">${c.co}</span></div>`;
+        });
+      }
+    };
+
+    document.getElementById('guessForm').onsubmit = (e) => {
+      e.preventDefault();
+      socket.send(JSON.stringify({ action: "guess", city: document.getElementById('guessInput').value }));
+      document.getElementById('guessInput').value = '';
+    };
+
+    document.getElementById('rematchBtn').onclick = () => {
+      socket.send(JSON.stringify({ action: "rematch" }));
+      document.getElementById('rematchBtn').textContent = "waiting for opponent...";
+      document.getElementById('rematchBtn').disabled = true;
+    };
+</script>
+</body>
+</html>

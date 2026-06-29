@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Server Test</title>
+</head>
+<body>
+  <h1>Multiplayer Test</h1>
+  <p id="status" style="color: orange; font-weight: bold;">Connecting...</p>
+  <button id="pingBtn" disabled>Send Ping to Server</button>
+  <ul id="messages"></ul>
+
+  <script>
+    // Updated connection URL
+    const socket = new WebSocket("ws://127.0.0.1:1999/party/test-room");
+    
+    const messagesList = document.getElementById('messages');
+    const statusText = document.getElementById('status');
+    const pingBtn = document.getElementById('pingBtn');
+
+    // 1. When the connection is successfully established
+    socket.onopen = () => {
+      statusText.textContent = "Connected successfully!";
+      statusText.style.color = "green";
+      pingBtn.disabled = false; // Turn on the button
+    };
+
+    // 2. If there is an error
+    socket.onerror = (error) => {
+      statusText.textContent = "Error connecting! Check the console (F12).";
+      statusText.style.color = "red";
+      console.error("WebSocket Error:", error);
+    };
+
+    // 3. When the server talks to us
+    socket.onmessage = (event) => {
+      const li = document.createElement('li');
+      li.textContent = event.data;
+      messagesList.appendChild(li);
+    };
+
+    // 4. When we click the button
+    pingBtn.addEventListener('click', () => {
+      socket.send("Hello from the browser!");
+    });
+  </script>
+</body>
+</html>

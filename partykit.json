@@ -1,0 +1,6 @@
+{
+  "name": "city-chain-server",
+  "main": "server.js",
+  "domain": "party.log4n.com"
+
+}
