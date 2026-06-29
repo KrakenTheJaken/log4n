@@ -156,10 +156,28 @@ export class CityChainServer extends Server {
 }
 
 // Tell Cloudflare how to route incoming HTTP/WebSocket requests to your game room
+// Tell Cloudflare exactly how to route the incoming connection
 export default {
   async fetch(request, env, ctx) {
-    return routePartykitRequest(request, env, {
-      CityChainServer
-    });
+    const url = new URL(request.url);
+    
+    // Check if the frontend is asking for a multiplayer room
+    if (url.pathname.startsWith("/parties/")) {
+      
+      // 1. Extract the room ID (e.g., 'FTXIQJ') from the end of the URL
+      const roomId = url.pathname.split('/').pop();
+      
+      // 2. Natively ask Cloudflare to generate an ID for this specific room
+      const id = env.CityChainServer.idFromName(roomId);
+      
+      // 3. Connect to the exact database/memory instance for this room
+      const roomInstance = env.CityChainServer.get(id);
+      
+      // 4. Forward the frontend's request directly to your game server logic
+      return roomInstance.fetch(request);
+    }
+    
+    return new Response("Not found", { status: 404 });
   }
 }
+
