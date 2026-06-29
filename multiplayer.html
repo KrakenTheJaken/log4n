@@ -142,9 +142,8 @@
     
     if (!roomId) window.location.href = "game.html";
 
-const socket = new WebSocket(
-  `wss://city-chain-server.n8c278skqk.workers.dev/parties/CityChainServer/${roomId}`
-);
+const socket = new WebSocket(`wss://city-chain-server.n8c278skqk.workers.dev/parties/CityChainServer/${roomId}`);
+
     if (!playerName) {
       document.getElementById('nameOverlay').style.display = 'flex';
       setTimeout(() => document.getElementById('modalInput').focus(), 100);
