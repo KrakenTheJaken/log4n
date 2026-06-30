@@ -10,7 +10,13 @@
   html, body { margin: 0; padding: 0; background: var(--cream); color: var(--ink); font-family: Verdana, Geneva, sans-serif; font-size: 13px; min-height: 100vh; }
   main { max-width: 480px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
   h1 { font-size: 1.4rem; color: var(--salmon-dark); margin: 0 0 0.25rem; }
-  .subtitle { font-size: 0.85rem; margin: 0 0 1rem; }
+  
+  .subtitle { font-size: 0.85rem; margin: 0 0 0.5rem; }
+  
+  .attribution { font-size: 0.72rem; margin: 0 0 1.25rem; font-style: italic; }
+  .attribution a { color: var(--salmon-dark); text-decoration: none; }
+  .attribution a:hover { text-decoration: underline; }
+
   a.back-link { display: inline-block; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--salmon-dark); }
 
   .panel { background: #ffffff; border: 1px solid var(--salmon-light); padding: 1.25rem 1.5rem; margin-bottom: 1rem; position: relative; }
@@ -72,7 +78,8 @@
 <main>
   <a class="back-link" href="game.html">&larr; back to game</a>
   <h1>city chain :: versus</h1>
-  <p class="subtitle">head to head. 15 seconds per turn.</p>
+  <p class="subtitle">head to head.</p>
+  <p class="attribution">city data from <a href="https://simplemaps.com/data/world-cities" target="_blank" rel="noopener noreferrer">simplemaps.com/data/world-cities</a>, used under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
 
   <div class="panel">
     <div class="stat-row">
@@ -139,10 +146,17 @@
     const urlParams = new URLSearchParams(window.location.search);
     const roomId = urlParams.get('room');
     let playerName = urlParams.get('name');
+
+    // Parse the settings object passed from the lobby
+    let parsedSettings = { turnDuration: 15 }; // Fallback
+    const settingsParam = urlParams.get('settings');
+    if (settingsParam) {
+      try { parsedSettings = JSON.parse(decodeURIComponent(settingsParam)); } catch(e) {}
+    }
     
     if (!roomId) window.location.href = "game.html";
 
-const socket = new WebSocket(`wss://city-chain-server.n8c278skqk.workers.dev/parties/CityChainServer/${roomId}`);
+    const socket = new WebSocket(`wss://city-chain-server.n8c278skqk.workers.dev/parties/CityChainServer/${roomId}`);
 
     if (!playerName) {
       document.getElementById('nameOverlay').style.display = 'flex';
@@ -154,11 +168,10 @@ const socket = new WebSocket(`wss://city-chain-server.n8c278skqk.workers.dev/par
       playerName = document.getElementById('modalInput').value.trim();
       document.getElementById('nameOverlay').style.display = 'none';
       if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ action: "set_name", name: playerName }));
+        socket.send(JSON.stringify({ action: "set_name", name: playerName, settings: parsedSettings }));
       }
     };
 
-    // --- Direct Room Link Generation ---
     const inviteLinkInput = document.getElementById('inviteLink');
     const currentBaseUrl = window.location.href.split('?')[0];
     inviteLinkInput.value = `${currentBaseUrl}?room=${roomId}`;
@@ -184,7 +197,7 @@ const socket = new WebSocket(`wss://city-chain-server.n8c278skqk.workers.dev/par
     let uiTimerInterval = null;
 
     socket.onopen = () => {
-      if (playerName) socket.send(JSON.stringify({ action: "set_name", name: playerName }));
+      if (playerName) socket.send(JSON.stringify({ action: "set_name", name: playerName, settings: parsedSettings }));
     };
 
     const ISO_OVERRIDES = { 'XW': 'PS', 'XG': 'PS', 'XR': 'SJ' };
@@ -278,13 +291,19 @@ const socket = new WebSocket(`wss://city-chain-server.n8c278skqk.workers.dev/par
           document.getElementById('p1-box').className = state.currentTurn === myDisplayIndex ? "stat-box active" : "stat-box";
           document.getElementById('p2-box').className = state.currentTurn === oppDisplayIndex ? "stat-box active" : "stat-box";
           
+          // Handle the visual timer updates
           clearInterval(uiTimerInterval);
-          uiTimerInterval = setInterval(() => {
-            const timeLeft = Math.max(0, Math.ceil((state.turnExpires - Date.now()) / 1000));
-            document.getElementById('timerDisplay').textContent = timeLeft;
-            if(timeLeft <= 5) document.getElementById('timerDisplay').classList.add('panic');
-            else document.getElementById('timerDisplay').classList.remove('panic');
-          }, 100);
+          if (state.settings && state.settings.turnDuration === -1) {
+            document.getElementById('timerDisplay').innerHTML = '&infin;';
+            document.getElementById('timerDisplay').classList.remove('panic');
+          } else {
+            uiTimerInterval = setInterval(() => {
+              const timeLeft = Math.max(0, Math.ceil((state.turnExpires - Date.now()) / 1000));
+              document.getElementById('timerDisplay').textContent = timeLeft;
+              if(timeLeft <= 5) document.getElementById('timerDisplay').classList.add('panic');
+              else document.getElementById('timerDisplay').classList.remove('panic');
+            }, 100);
+          }
         }
 
         const list = document.getElementById('usedList');

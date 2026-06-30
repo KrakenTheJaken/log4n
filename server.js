@@ -8,7 +8,6 @@ CITIES_DATA.forEach(entry => {
   cityIndex.get(key).push(entry);
 });
 
-// Extend the new Server class
 export class CityChainServer extends Server {
   constructor(ctx, env) {
     super(ctx, env);
@@ -24,9 +23,11 @@ export class CityChainServer extends Server {
       turnExpires: null,
       winner: null,
       rematchVotes: [],
-      message: "Waiting for opponent to join..."
+      message: "Waiting for opponent to join...",
+      settings: null // Locked in when first player connects
     };
     this.timerId = null;
+    this.lastLoserIndex = null;
   }
 
   onConnect(connection) {
@@ -49,6 +50,7 @@ export class CityChainServer extends Server {
       if (leavingIndex === 0 || leavingIndex === 1) {
         const winningIndex = leavingIndex === 0 ? 1 : 0;
         this.gameState.scores[winningIndex]++;
+        this.lastLoserIndex = leavingIndex;
       }
       this.gameState.status = "game_over";
       this.gameState.message = "Opponent disconnected. You win!";
@@ -61,7 +63,7 @@ export class CityChainServer extends Server {
 
   startGame() {
     this.gameState.status = "playing";
-    this.gameState.currentTurn = 0;
+    this.gameState.currentTurn = (this.lastLoserIndex === 0 || this.lastLoserIndex === 1) ? this.lastLoserIndex : 0;
     this.gameState.usedKeys = [];
     this.gameState.usedCitiesData = [];
     this.gameState.rematchVotes = [];
@@ -71,25 +73,37 @@ export class CityChainServer extends Server {
     this.gameState.usedKeys.push(startKey);
     this.gameState.usedCitiesData.push(this.gameState.currentCityEntry);
     this.gameState.requiredLetter = this.getLastLetter(startKey);
-    this.gameState.message = "Game Started! " + this.gameState.players[0].name + " goes first.";
+    this.gameState.message = "Game Started! " + this.gameState.players[this.gameState.currentTurn].name + " goes first.";
     this.startTurnTimer();
   }
 
   startTurnTimer() {
     if (this.timerId) clearTimeout(this.timerId);
-    this.gameState.turnExpires = Date.now() + 15000;
+    
+    const duration = this.gameState.settings.turnDuration;
+    
+    // Handle Infinite Timer
+    if (duration === -1) {
+      this.gameState.turnExpires = null; 
+      this.broadcastState();
+      return; 
+    }
+
+    this.gameState.turnExpires = Date.now() + (duration * 1000);
     this.broadcastState();
+    
     this.timerId = setTimeout(() => {
       this.gameState.status = "game_over";
-      const winningIndex = this.gameState.currentTurn === 0 ? 1 : 0;
+      const losingIndex = this.gameState.currentTurn;
+      const winningIndex = losingIndex === 0 ? 1 : 0;
       this.gameState.scores[winningIndex]++;
+      this.lastLoserIndex = losingIndex;
       const winner = this.gameState.players[winningIndex]?.name || "Opponent";
       this.gameState.message = `Time's up! ${winner} wins!`;
       this.broadcastState();
-    }, 15000);
+    }, duration * 1000);
   }
 
-  // Note: 'connection' is now the first argument in partyserver
   onMessage(connection, messageString) {
     const data = JSON.parse(messageString);
 
@@ -98,6 +112,13 @@ export class CityChainServer extends Server {
       if (player && data.name) {
         player.name = data.name.substring(0, 15).trim();
         player.isReady = true; 
+
+        // Initialize settings from the first connected player
+        if (!this.gameState.settings) {
+          this.gameState.settings = {
+            turnDuration: data.settings?.turnDuration !== undefined ? data.settings.turnDuration : 15
+          };
+        }
 
         if (this.gameState.status === "waiting" && this.gameState.players.length === 2 && this.gameState.players.every(p => p.isReady)) {
           this.startGame();
@@ -145,7 +166,6 @@ export class CityChainServer extends Server {
   }
 
   broadcastState() { 
-    // partyserver provides this.broadcast natively
     this.broadcast(JSON.stringify({ type: "state_update", state: this.gameState })); 
   }
   
@@ -155,14 +175,15 @@ export class CityChainServer extends Server {
   findClosestSuggestion(g, r) { let best = null, bestDist = Infinity; for (const k of cityIndex.keys()) { if (this.getFirstLetter(k) === r && !this.gameState.usedKeys.includes(k)) { let d = this.levenshtein(g, k); if (d < bestDist) { bestDist = d; best = k; } } } return (best && bestDist <= 2 && g.length >= 5) ? cityIndex.get(best)[0] : null; }
 }
 
-// Tell Cloudflare how to route incoming HTTP/WebSocket requests to your game room
-// Tell Cloudflare exactly how to route the incoming connection
 export default {
   async fetch(request, env, ctx) {
-    return (
-      (await routePartykitRequest(request, env)) ||
-      new Response("Not found", { status: 404 })
-    );
+    const url = new URL(request.url);
+    if (url.pathname.startsWith("/parties/CityChainServer/")) {
+      const roomId = url.pathname.split('/').pop();
+      const id = env.CityChainServer.idFromName(roomId);
+      const roomInstance = env.CityChainServer.get(id);
+      return roomInstance.fetch(request);
+    }
+    return new Response("Not found", { status: 404 });
   }
 }
-

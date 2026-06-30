@@ -42,6 +42,19 @@
     margin: 0 0 1rem;
   }
 
+  .attribution {
+    font-size: 0.72rem;
+    margin: -0.5rem 0 1rem;
+    font-style: italic;
+  }
+
+  .attribution a {
+    color: var(--salmon-dark);
+    text-decoration: none;
+  }
+
+  .attribution a:hover { text-decoration: underline; }
+
   .mode-tabs {
     display: flex;
     margin-bottom: 1.25rem;
@@ -73,18 +86,6 @@
     margin-bottom: 1rem;
   }
 
-  .popup-panel {
-    background: var(--salmon-light);
-    border: 2px solid var(--salmon-dark);
-    text-align: center;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    display: none;
-  }
-
-  .popup-panel h3 { margin-top: 0; margin-bottom: 1rem; color: var(--ink); font-size: 1rem; }
-  .popup-panel .choices { display: flex; gap: 0.5rem; justify-content: center; }
-
   .stat-row { display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 0.85rem; }
   .stat-box { text-align: center; }
   .stat-label { color: var(--ink); opacity: 0.7; font-size: 0.75rem; }
@@ -97,11 +98,11 @@
   .current-city .country { font-size: 0.85rem; margin-top: 0.2rem; opacity: 0.8; }
 
   form { display: flex; gap: 0.5rem; }
-  input[type="text"] {
+  input[type="text"], input[type="number"], select {
     flex: 1; padding: 0.5rem 0.6rem; border: 1px solid var(--salmon-light);
     font-family: Verdana, Geneva, sans-serif; font-size: 0.95rem; background: var(--cream); color: var(--ink);
   }
-  input[type="text"]:focus { outline: 1px solid var(--salmon-dark); }
+  input[type="text"]:focus, input[type="number"]:focus, select:focus { outline: 1px solid var(--salmon-dark); }
 
   button {
     font-family: Verdana, Geneva, sans-serif; font-weight: bold; font-size: 0.85rem;
@@ -122,6 +123,7 @@
 
   .lifeline-col { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.75rem; }
   .lifeline-row { border: 1px solid var(--salmon-light); }
+  .lifeline-row.armed { border-color: var(--salmon-dark); background: var(--salmon-light); }
   .lifeline-btn {
     width: 100%; display: flex; justify-content: space-between; align-items: center;
     background: none; color: var(--salmon-dark); border: none; font-size: 0.8rem;
@@ -137,6 +139,42 @@
   .bottom-row button { background: none; color: var(--salmon-dark); border: 1px solid var(--salmon-light); font-size: 0.8rem; }
   .bottom-row button:hover { background: var(--salmon-light); color: var(--ink); }
   .reset-score-btn { font-weight: normal; opacity: 0.7; }
+
+  .toast-stack {
+    position: fixed;
+    left: 1rem;
+    bottom: 1rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: var(--ink);
+    color: var(--cream);
+    border-left: 4px solid var(--salmon);
+    padding: 0.65rem 0.9rem;
+    font-size: 0.8rem;
+    font-family: Verdana, Geneva, sans-serif;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    max-width: 260px;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: toastIn 0.25s ease forwards, toastOut 0.4s ease forwards 2.6s;
+  }
+
+  .toast .toast-title { font-weight: bold; color: var(--salmon-light); margin-bottom: 0.15rem; }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(8px); }
+  }
 </style>
 </head>
 <body>
@@ -147,6 +185,7 @@
   <a class="back-link" href="stats.html" style="margin-left: 1rem;">stats &rarr;</a>
   <h1>city chain</h1>
   <p class="subtitle">name a real city that starts with the last letter of the previous one. no repeats.</p>
+  <p class="attribution">city data from <a href="https://simplemaps.com/data/world-cities" target="_blank" rel="noopener noreferrer">simplemaps.com/data/world-cities</a>, used under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
 
   <div class="mode-tabs">
     <div class="mode-tab active" id="tab-infinite" onclick="switchMode('infinite')">infinite mode</div>
@@ -154,18 +193,8 @@
     <div class="mode-tab" id="tab-lobby" onclick="switchMode('lobby')">Versus Lobby</div>
   </div>
 
-  <div class="popup-panel" id="lifelinePopup">
-    <h3>You've reached 50 guesses! Choose a lifeline to restore:</h3>
-    <div class="choices">
-      <button type="button" onclick="chooseLifeline('country')">Country</button>
-      <button type="button" onclick="chooseLifeline('letters')">Letters</button>
-      <button type="button" onclick="chooseLifeline('population')">Population</button>
-    </div>
-  </div>
-
   <div class="panel">
     
-    <!-- SINGLE PLAYER UI (Hidden when in Lobby mode) -->
     <div id="singlePlayerUI">
       <div class="stat-row">
         <div class="stat-box">
@@ -200,23 +229,23 @@
       <div class="message" id="message"></div>
 
       <div class="lifeline-col">
-        <div class="lifeline-row">
+        <div class="lifeline-row" id="rowCountry">
           <button class="lifeline-btn" id="lifelineCountry" type="button">
             <span>country</span>
             <span class="lifeline-uses" id="usesCountry"></span>
           </button>
           <div class="lifeline-result" id="resultCountry"></div>
         </div>
-        <div class="lifeline-row">
+        <div class="lifeline-row" id="rowLetters">
           <button class="lifeline-btn" id="lifelineLetters" type="button">
             <span>letters</span>
             <span class="lifeline-uses" id="usesLetters"></span>
           </button>
           <div class="lifeline-result" id="resultLetters"></div>
         </div>
-        <div class="lifeline-row">
+        <div class="lifeline-row" id="rowFreefill">
           <button class="lifeline-btn" id="lifelineCount" type="button">
-            <span>population</span>
+            <span>free fill</span>
             <span class="lifeline-uses" id="usesCount"></span>
           </button>
           <div class="lifeline-result" id="resultCount"></div>
@@ -229,7 +258,7 @@
       </div>
     </div>
 
- <div id="lobbyUI" style="display: none; text-align: center; padding: 1.5rem 0;">
+    <div id="lobbyUI" style="display: none; text-align: center; padding: 1.5rem 0;">
       <div class="stat-label" style="font-size: 0.9rem; margin-bottom: 1.5rem; color: var(--ink);">
         Create or join a private room.
       </div>
@@ -237,6 +266,21 @@
       <form id="lobbyForm" style="display: flex; flex-direction: column; gap: 0.75rem; align-items: center; margin-bottom: 1rem;">
         <input type="text" id="playerNameInput" placeholder="Your Name (e.g. Trevor Moore)" required style="width: 100%; max-width: 280px; text-align: center;" />
         
+        <div style="width: 100%; max-width: 280px; background: var(--cream); border: 1px solid var(--salmon-light); padding: 0.75rem; text-align: left;">
+          <div style="font-size: 0.75rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--salmon-dark);">Room Settings</div>
+          
+          <label style="display: block; font-size: 0.8rem; margin-bottom: 0.25rem;">Turn Timer</label>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem;">
+             <select id="timerSelect" style="flex: 1; padding: 0.3rem; border: 1px solid var(--salmon-light); font-family: inherit;">
+               <option value="5">5 Seconds</option>
+               <option value="15" selected>15 Seconds</option>
+               <option value="30">30 Seconds</option>
+               <option value="custom">Custom...</option>
+             </select>
+             <input type="number" id="customTimerInput" placeholder="-1 for &infin;" style="display: none; width: 80px; padding: 0.3rem; border: 1px solid var(--salmon-light); text-align: center;" />
+          </div>
+          </div>
+
         <div style="display: flex; gap: 0.5rem; width: 100%; max-width: 280px;">
           <input type="text" id="roomInput" placeholder="Room Code" required style="flex: 1; text-align: center;" />
         </div>
@@ -252,12 +296,13 @@
 
   </div>
 
-  <!-- History panel only applies to single-player -->
   <div class="panel" id="historyPanel">
     <div class="stat-label" style="margin-bottom:0.5rem;">cities used this round</div>
     <div class="used-list" id="usedList"></div>
   </div>
 </main>
+
+<div class="toast-stack" id="toastStack"></div>
 
 <script src="cities.js"></script>
 
@@ -270,8 +315,7 @@
   });
   const allKeys = Array.from(cityIndex.keys());
 
-  const LIFELINE_COUNT = 1;
-  const GAME_DURATION = 300; 
+  const GAME_DURATION = 300;
 
   function loadLifetimeGuessed() {
     const raw = localStorage.getItem('cityChainLifetimeGuessed');
@@ -330,9 +374,9 @@
   let timerInterval = null;
 
   const lifelines = {
-    country: { uses: LIFELINE_COUNT, result: '' },
-    letters: { uses: LIFELINE_COUNT, result: '' },
-    population: { uses: LIFELINE_COUNT, result: '' }
+    country: { interval: 25, consumed: 0, result: '' },
+    letters: { interval: 50, consumed: 0, result: '' },
+    freefill: { interval: 100, consumed: 0, result: '', armed: false }
   };
 
   const scoreEl = document.getElementById('score');
@@ -351,7 +395,6 @@
   const guessSubmitBtn = guessForm.querySelector('button[type="submit"]');
   const restartBtn = document.getElementById('restartBtn');
   const resetScoreBtn = document.getElementById('resetScoreBtn');
-  const lifelinePopup = document.getElementById('lifelinePopup');
 
   const singlePlayerUI = document.getElementById('singlePlayerUI');
   const lobbyUI = document.getElementById('lobbyUI');
@@ -359,10 +402,32 @@
   const lobbyForm = document.getElementById('lobbyForm');
 
   const lifelineEls = {
-    country: { btn: document.getElementById('lifelineCountry'), uses: document.getElementById('usesCountry'), result: document.getElementById('resultCountry') },
-    letters: { btn: document.getElementById('lifelineLetters'), uses: document.getElementById('usesLetters'), result: document.getElementById('resultLetters') },
-    population: { btn: document.getElementById('lifelineCount'), uses: document.getElementById('usesCount'), result: document.getElementById('resultCount') }
+    country: { row: document.getElementById('rowCountry'), btn: document.getElementById('lifelineCountry'), uses: document.getElementById('usesCountry'), result: document.getElementById('resultCountry') },
+    letters: { row: document.getElementById('rowLetters'), btn: document.getElementById('lifelineLetters'), uses: document.getElementById('usesLetters'), result: document.getElementById('resultLetters') },
+    freefill: { row: document.getElementById('rowFreefill'), btn: document.getElementById('lifelineCount'), uses: document.getElementById('usesCount'), result: document.getElementById('resultCount') }
   };
+
+  const LIFELINE_LABELS = { country: 'country', letters: 'letters', freefill: 'free fill' };
+  const toastStack = document.getElementById('toastStack');
+  let lastAvailable = { country: 0, letters: 0, freefill: 0 };
+
+  function showToast(title, text) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = '<div class="toast-title">' + title + '</div>' + text;
+    toastStack.appendChild(el);
+    setTimeout(() => { el.remove(); }, 3000);
+  }
+
+  function checkLifelineReplenish(silent) {
+    Object.keys(lifelines).forEach(key => {
+      const available = lifelineAvailable(key);
+      if (!silent && available > lastAvailable[key]) {
+        showToast('lifeline ready', LIFELINE_LABELS[key] + ' lifeline has replenished!');
+      }
+      lastAvailable[key] = available;
+    });
+  }
 
   gamesPlayedEl.textContent = gamesPlayed;
 
@@ -451,16 +516,26 @@
     messageEl.className = 'message' + (type ? ' ' + type : '');
   }
 
+  function lifelineEarned(key) { return Math.floor(score / lifelines[key].interval) + 1; }
+  function lifelineAvailable(key) { return lifelineEarned(key) - lifelines[key].consumed; }
+
   function renderLifelines() {
     Object.keys(lifelines).forEach(key => {
       const state = lifelines[key];
       const els = lifelineEls[key];
-      if (state.uses <= 0) {
-        const guessesUntil = 50 - (score % 50);
+      const available = lifelineAvailable(key);
+
+      if (available <= 0) {
+        const guessesUntil = state.interval - (score % state.interval);
         els.uses.textContent = `(${guessesUntil} guesses to replenish)`;
-      } else els.uses.textContent = '(' + state.uses + ' left)';
-      els.btn.disabled = state.uses <= 0 || roundOver;
+      } else {
+        els.uses.textContent = '(' + available + ' left)';
+      }
+
+      els.btn.disabled = (available <= 0 || roundOver) && !(key === 'freefill' && state.armed);
       els.result.textContent = state.result;
+
+      if (els.row) els.row.classList.toggle('armed', !!state.armed);
     });
   }
 
@@ -507,8 +582,8 @@
   function saveSession() {
     const session = {
       endTime, timerStarted, timeRemaining, currentCityEntry, usedKeys: Array.from(usedKeys), score,
-      lifelineUses: { country: lifelines.country.uses, letters: lifelines.letters.uses, population: lifelines.population.uses },
-      popupOpen: lifelinePopup.style.display === 'block'
+      lifelineConsumed: { country: lifelines.country.consumed, letters: lifelines.letters.consumed, freefill: lifelines.freefill.consumed },
+      freefillArmed: lifelines.freefill.armed
     };
     localStorage.setItem(getSessionKey(gameMode), JSON.stringify(session));
   }
@@ -546,8 +621,13 @@
   function resumeSession(session) {
     clearInterval(timerInterval);
     currentCityEntry = session.currentCityEntry; usedKeys = new Set(session.usedKeys); score = session.score;
-    lifelines.country.uses = session.lifelineUses.country; lifelines.letters.uses = session.lifelineUses.letters; lifelines.population.uses = session.lifelineUses.population;
-    lifelines.country.result = ''; lifelines.letters.result = ''; lifelines.population.result = '';
+
+    const lc = session.lifelineConsumed || {};
+    lifelines.country.consumed = lc.country || 0;
+    lifelines.letters.consumed = lc.letters || 0;
+    lifelines.freefill.consumed = lc.freefill || 0;
+    lifelines.country.result = ''; lifelines.letters.result = ''; lifelines.freefill.result = '';
+    lifelines.freefill.armed = !!session.freefillArmed;
     
     if (gameMode === 'timed') {
       timerStarted = session.timerStarted || false; timeRemaining = session.timeRemaining;
@@ -559,12 +639,10 @@
     } else roundOver = false;
 
     applyModeUI(); scoreEl.textContent = score; renderCurrentCity(); renderUsedList(); renderLifelines(); guessInput.value = '';
+    checkLifelineReplenish(true);
 
-    if (session.popupOpen && !roundOver) {
-      lifelinePopup.style.display = 'block'; setMessage('welcome back! pick a lifeline or keep guessing.', 'good');
-      if (gameMode === 'timed' && timerStarted) startTimer();
-    } else if (roundOver) {
-      lifelinePopup.style.display = 'none'; setGuessLocked(true);
+    if (roundOver) {
+      setGuessLocked(true);
       let banner = 'time\'s up! final score: ' + score + '.';
       if (usedKeys.size > 0 && score > 0) {
         const [answer] = getTopCandidates(lastLetterOf(currentCityEntry.a), 1);
@@ -573,8 +651,10 @@
       }
       setMessage(banner, 'bad');
     } else {
-      lifelinePopup.style.display = 'none'; setGuessLocked(false);
-      setMessage('welcome back, picking up where you left off.', 'good'); guessInput.focus();
+      setGuessLocked(false);
+      if (lifelines.freefill.armed) setMessage('welcome back! free fill is still armed \u2014 type any unused city.', 'good');
+      else setMessage('welcome back, picking up where you left off.', 'good');
+      guessInput.focus();
       if (gameMode === 'timed' && timerStarted) startTimer();
     }
   }
@@ -588,7 +668,7 @@
 
   function startGame() {
     clearInterval(timerInterval);
-    const previousScore = score; score = 0; usedKeys = new Set(); roundOver = false; lifelinePopup.style.display = 'none';
+    const previousScore = score; score = 0; usedKeys = new Set(); roundOver = false;
     applyModeUI();
     if (gameMode === 'lobby') return;
 
@@ -603,8 +683,9 @@
     scoreEl.textContent = score; renderCurrentCity(); renderUsedList(); setMessage(''); guessInput.value = '';
     setGuessLocked(false); guessInput.focus();
 
-    lifelines.country.uses = LIFELINE_COUNT; lifelines.letters.uses = LIFELINE_COUNT; lifelines.population.uses = LIFELINE_COUNT;
+    lifelines.country.consumed = 0; lifelines.letters.consumed = 0; lifelines.freefill.consumed = 0; lifelines.freefill.armed = false;
     clearLifelineResults();
+    checkLifelineReplenish(true);
     
     if (gameMode === 'timed') { timeRemaining = GAME_DURATION; timerStarted = false; endTime = null; updateTimerDisplay(); }
     saveSession();
@@ -623,10 +704,14 @@
     else startGame();
   };
 
-  // --- LOBBY LOGIC ---
   const urlParams = new URLSearchParams(window.location.search);
   const inviteCode = urlParams.get('invite');
   if (inviteCode) { document.getElementById('roomInput').value = inviteCode; switchMode('lobby'); }
+
+  // Custom Timer Toggle
+  document.getElementById('timerSelect').addEventListener('change', (e) => {
+    document.getElementById('customTimerInput').style.display = e.target.value === 'custom' ? 'block' : 'none';
+  });
 
   document.getElementById('randomRoomBtn').addEventListener('click', () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -634,7 +719,6 @@
     for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
     document.getElementById('roomInput').value = code;
     
-    // Auto-join if name is already provided
     if (document.getElementById('playerNameInput').checkValidity()) {
       document.getElementById('lobbyForm').requestSubmit();
     } else {
@@ -642,16 +726,25 @@
     }
   });
 
+  // Handle Lobby Submission & Bundle Settings
   document.getElementById('lobbyForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const roomCode = document.getElementById('roomInput').value.trim();
     const playerName = document.getElementById('playerNameInput').value.trim();
+    
+    // Gather settings
+    const timerVal = document.getElementById('timerSelect').value;
+    const finalTimer = timerVal === 'custom' ? (document.getElementById('customTimerInput').value || -1) : timerVal;
+    
+    // Bundle into an object (easy to add region/country filters here later)
+    const roomSettings = { turnDuration: parseInt(finalTimer, 10) };
+    const settingsQuery = encodeURIComponent(JSON.stringify(roomSettings));
+
     if (roomCode && playerName) {
-      window.location.href = `multiplayer.html?room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(playerName)}`;
+      window.location.href = `multiplayer.html?room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(playerName)}&settings=${settingsQuery}`;
     }
   });
 
-  // --- Game Event Listeners ---
   guessInput.addEventListener('input', () => {
     if (gameMode === 'timed' && !timerStarted && !roundOver) {
       timerStarted = true; endTime = Date.now() + timeRemaining * 1000; startTimer(); saveSession();
@@ -667,15 +760,24 @@
     const key = raw.toLowerCase();
     const requiredLetter = lastLetterOf(currentCityEntry.a);
     const guessFirstLetter = firstLetterOf(key);
+    const usingFreefill = lifelines.freefill.armed;
 
-    if (!guessFirstLetter || guessFirstLetter !== requiredLetter) { setMessage('needs to start with "' + requiredLetter.toUpperCase() + '".', 'bad'); return; }
+    if (!usingFreefill && (!guessFirstLetter || guessFirstLetter !== requiredLetter)) {
+      setMessage('needs to start with "' + requiredLetter.toUpperCase() + '".', 'bad');
+      return;
+    }
     if (usedKeys.has(key)) { setMessage('already used that one, try another.', 'bad'); return; }
 
     if (!cityIndex.has(key)) {
-      const suggestion = findClosestSuggestion(key, requiredLetter);
+      const suggestion = usingFreefill ? null : findClosestSuggestion(key, requiredLetter);
       if (suggestion) setMessage('not found, did you mean "' + suggestion.c + '"?', 'bad');
       else setMessage('that doesn\'t match a city in the list.', 'bad');
       return;
+    }
+
+    if (usingFreefill) {
+      lifelines.freefill.consumed += 1;
+      lifelines.freefill.armed = false;
     }
 
     usedKeys.add(key); recordLifetimeGuess(key); currentCityEntry = cityIndex.get(key)[0];
@@ -688,12 +790,9 @@
     }
 
     renderCurrentCity(); renderUsedList(); clearLifelineResults(); guessInput.value = ''; guessInput.focus();
+    checkLifelineReplenish(false);
 
-    if (score > 0 && score % 50 === 0) {
-      lifelinePopup.style.display = 'block'; setMessage('nice, ' + currentCityEntry.c + ' it is. Pick a lifeline to restore!', 'good');
-    } else {
-      setMessage('nice, ' + currentCityEntry.c + ' it is.', 'good');
-    }
+    setMessage((usingFreefill ? 'free fill used \u2014 ' : 'nice, ') + currentCityEntry.c + ' it is.', 'good');
     saveSession();
   });
 
@@ -708,26 +807,42 @@
     if (banner) setMessage(banner, 'bad');
   });
 
-  window.chooseLifeline = function(key) {
-    lifelines[key].uses += 1; lifelinePopup.style.display = 'none';
-    renderLifelines(); guessInput.focus(); saveSession();
-  };
+  lifelineEls.country.btn.addEventListener('click', () => {
+    if (lifelineAvailable('country') <= 0 || roundOver) return;
+    const [top] = getTopCandidates(lastLetterOf(currentCityEntry.a), 1);
+    const text = top ? (isoToFlag(top.iso) + ' ' + top.co) : 'no valid cities left for that letter.';
+    lifelines.country.consumed += 1;
+    lifelines.country.result = text;
+    renderLifelines(); saveSession();
+  });
 
-  Object.keys(lifelines).forEach(key => {
-    lifelineEls[key].btn.addEventListener('click', () => {
-      if (lifelines[key].uses <= 0 || roundOver) return;
-      const [top] = getTopCandidates(lastLetterOf(currentCityEntry.a), 1);
-      let text;
-      if (!top) text = 'no valid cities left for that letter.';
-      else if (key === 'country') text = isoToFlag(top.iso) + ' ' + top.co;
-      else if (key === 'letters') {
-        const cleaned = top.a.replace(/[^a-zA-Z]/g, '');
-        const thirdLen = Math.max(1, Math.ceil(cleaned.length / 3));
-        text = cleaned.split('').map((ch, i) => i < thirdLen ? ch.toUpperCase() : '_').join(' ');
-      } else if (key === 'population') text = top.p ? ('about ' + top.p.toLocaleString()) : 'unknown';
+  lifelineEls.letters.btn.addEventListener('click', () => {
+    if (lifelineAvailable('letters') <= 0 || roundOver) return;
+    const [top] = getTopCandidates(lastLetterOf(currentCityEntry.a), 1);
+    let text;
+    if (!top) text = 'no valid cities left for that letter.';
+    else {
+      const cleaned = top.a.replace(/[^a-zA-Z]/g, '');
+      const thirdLen = Math.max(1, Math.ceil(cleaned.length / 3));
+      text = cleaned.split('').map((ch, i) => i < thirdLen ? ch.toUpperCase() : '_').join(' ');
+    }
+    lifelines.letters.consumed += 1;
+    lifelines.letters.result = text;
+    renderLifelines(); saveSession();
+  });
 
-      lifelines[key].uses -= 1; lifelines[key].result = text; renderLifelines(); saveSession();
-    });
+  lifelineEls.freefill.btn.addEventListener('click', () => {
+    if (lifelines.freefill.armed) {
+      lifelines.freefill.armed = false;
+      lifelines.freefill.result = '';
+      setMessage('free fill cancelled.', 'good');
+    } else {
+      if (lifelineAvailable('freefill') <= 0 || roundOver) return;
+      lifelines.freefill.armed = true;
+      lifelines.freefill.result = 'armed \u2014 type any unused city next.';
+      setMessage('free fill armed: your next guess can be any valid, unused city.', 'good');
+    }
+    renderLifelines(); saveSession();
   });
 
   resetScoreBtn.addEventListener('click', () => {
