@@ -6,3 +6,6 @@ test.py
 .wrangler/
 .partykit/
 node_modules/
+manager.py
+test.html
+cities.json

@@ -8,6 +8,9 @@ CITIES_DATA.forEach(entry => {
   cityIndex.get(key).push(entry);
 });
 
+const RECONNECT_GRACE_MS = 20000; // how long a dropped player's seat stays reserved
+const MAX_CHAT_LOG = 50;
+
 export class CityChainServer extends Server {
   constructor(ctx, env) {
     super(ctx, env);
@@ -24,38 +27,79 @@ export class CityChainServer extends Server {
       winner: null,
       rematchVotes: [],
       message: "Waiting for opponent to join...",
-      settings: null // Locked in when first player connects
+      settings: null, // Locked in when first player connects
+      chatLog: []
     };
     this.timerId = null;
     this.lastLoserIndex = null;
+    this.disconnectTimers = {}; // token -> setTimeout handle
   }
 
-  onConnect(connection) {
-    if (this.gameState.players.length >= 2) {
-      connection.send(JSON.stringify({ type: "error", message: "Room is full!" }));
+  onConnect(connection, ctx) {
+    const url = new URL(ctx.request.url);
+    const token = url.searchParams.get('token');
+
+    // Reconnect case: this token already has a seat in this room.
+    const existingPlayer = token ? this.gameState.players.find(p => p.token === token) : null;
+    if (existingPlayer) {
+      existingPlayer.id = connection.id;
+      existingPlayer.disconnectedAt = null;
+
+      if (this.disconnectTimers[token]) {
+        clearTimeout(this.disconnectTimers[token]);
+        delete this.disconnectTimers[token];
+      }
+
+      connection.send(JSON.stringify({ type: "welcome", playerId: connection.id }));
+      if (this.gameState.status === "playing") {
+        this.gameState.message = `${existingPlayer.name} reconnected!`;
+      }
+      this.broadcastState();
       return;
     }
-    
-    this.gameState.players.push({ id: connection.id, name: "Joining...", isReady: false });
+
+    // Not a known seat — room only ever holds 2 seats, reserved or not.
+    if (this.gameState.players.length >= 2) {
+      connection.send(JSON.stringify({ type: "error", message: "Room is full!" }));
+      connection.close(4001, "Room full");
+      return;
+    }
+
+    this.gameState.players.push({ id: connection.id, name: "Joining...", isReady: false, token, disconnectedAt: null });
     connection.send(JSON.stringify({ type: "welcome", playerId: connection.id }));
     this.broadcastState();
   }
 
   onClose(connection) {
-    const leavingIndex = this.gameState.players.findIndex(p => p.id === connection.id);
-    this.gameState.players = this.gameState.players.filter(p => p.id !== connection.id);
+    const player = this.gameState.players.find(p => p.id === connection.id);
     this.gameState.rematchVotes = this.gameState.rematchVotes.filter(id => id !== connection.id);
-    
+    if (!player) return;
+
     if (this.gameState.status === "playing") {
-      if (leavingIndex === 0 || leavingIndex === 1) {
-        const winningIndex = leavingIndex === 0 ? 1 : 0;
-        this.gameState.scores[winningIndex]++;
-        this.lastLoserIndex = leavingIndex;
-      }
-      this.gameState.status = "game_over";
-      this.gameState.message = "Opponent disconnected. You win!";
+      // Don't end the game immediately — hold the seat open for a grace period
+      // in case this was a network blip rather than a real departure.
+      player.disconnectedAt = Date.now();
+      this.gameState.message = `${player.name} disconnected. Waiting for them to reconnect...`;
       this.broadcastState();
+
+      const token = player.token;
+      this.disconnectTimers[token] = setTimeout(() => {
+        delete this.disconnectTimers[token];
+        const stillGone = this.gameState.players.find(p => p.token === token);
+        if (stillGone && stillGone.disconnectedAt && this.gameState.status === "playing") {
+          const leavingIndex = this.gameState.players.indexOf(stillGone);
+          const winningIndex = leavingIndex === 0 ? 1 : 0;
+          this.gameState.scores[winningIndex]++;
+          this.lastLoserIndex = leavingIndex;
+          this.gameState.status = "game_over";
+          const winnerName = this.gameState.players[winningIndex]?.name || "Opponent";
+          this.gameState.message = `${stillGone.name} didn't reconnect in time. ${winnerName} wins!`;
+          this.broadcastState();
+        }
+      }, RECONNECT_GRACE_MS);
     } else if (this.gameState.status === "waiting") {
+      // No game in progress yet, free up the seat immediately.
+      this.gameState.players = this.gameState.players.filter(p => p.id !== connection.id);
       this.gameState.message = "Waiting for an opponent to join...";
       this.broadcastState();
     }
@@ -67,7 +111,13 @@ export class CityChainServer extends Server {
     this.gameState.usedKeys = [];
     this.gameState.usedCitiesData = [];
     this.gameState.rematchVotes = [];
-    const pool = CITIES_DATA.slice(0, 500); 
+
+    // Clear any stale disconnect grace timers from a previous round.
+    Object.values(this.disconnectTimers).forEach(t => clearTimeout(t));
+    this.disconnectTimers = {};
+    this.gameState.players.forEach(p => { p.disconnectedAt = null; });
+
+    const pool = CITIES_DATA.slice(0, 500);
     this.gameState.currentCityEntry = pool[Math.floor(Math.random() * pool.length)];
     const startKey = this.gameState.currentCityEntry.a.toLowerCase().trim();
     this.gameState.usedKeys.push(startKey);
@@ -79,19 +129,19 @@ export class CityChainServer extends Server {
 
   startTurnTimer() {
     if (this.timerId) clearTimeout(this.timerId);
-    
+
     const duration = this.gameState.settings.turnDuration;
-    
+
     // Handle Infinite Timer
     if (duration === -1) {
-      this.gameState.turnExpires = null; 
+      this.gameState.turnExpires = null;
       this.broadcastState();
-      return; 
+      return;
     }
 
     this.gameState.turnExpires = Date.now() + (duration * 1000);
     this.broadcastState();
-    
+
     this.timerId = setTimeout(() => {
       this.gameState.status = "game_over";
       const losingIndex = this.gameState.currentTurn;
@@ -107,11 +157,13 @@ export class CityChainServer extends Server {
   onMessage(connection, messageString) {
     const data = JSON.parse(messageString);
 
+    if (data.action === "ping") return; // heartbeat keepalive, no-op
+
     if (data.action === "set_name") {
       const player = this.gameState.players.find(p => p.id === connection.id);
       if (player && data.name) {
         player.name = data.name.substring(0, 15).trim();
-        player.isReady = true; 
+        player.isReady = true;
 
         // Initialize settings from the first connected player
         if (!this.gameState.settings) {
@@ -126,6 +178,18 @@ export class CityChainServer extends Server {
           this.broadcastState();
         }
       }
+      return;
+    }
+
+    if (data.action === "chat") {
+      const player = this.gameState.players.find(p => p.id === connection.id);
+      if (!player || typeof data.message !== "string") return;
+      const text = data.message.trim().slice(0, 200);
+      if (!text) return;
+
+      this.gameState.chatLog.push({ name: player.name, message: text, ts: Date.now() });
+      if (this.gameState.chatLog.length > MAX_CHAT_LOG) this.gameState.chatLog.shift();
+      this.broadcastState();
       return;
     }
 
@@ -165,10 +229,10 @@ export class CityChainServer extends Server {
     }
   }
 
-  broadcastState() { 
-    this.broadcast(JSON.stringify({ type: "state_update", state: this.gameState })); 
+  broadcastState() {
+    this.broadcast(JSON.stringify({ type: "state_update", state: this.gameState }));
   }
-  
+
   getFirstLetter(n) { const c = n.replace(/[^a-zA-Z]/g, ''); return c ? c.charAt(0).toLowerCase() : ''; }
   getLastLetter(n) { const c = n.replace(/[^a-zA-Z]/g, ''); return c.charAt(c.length - 1).toLowerCase(); }
   levenshtein(a, b) { const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0)); for (let i = 0; i <= a.length; i++) dp[i][0] = i; for (let j = 0; j <= b.length; j++) dp[0][j] = j; for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]); return dp[a.length][b.length]; }

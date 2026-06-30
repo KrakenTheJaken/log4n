@@ -1,4 +1,4 @@
-name = "city-chain-server"
+name = "city-chain-server-v2"
 main = "server.js"
 compatibility_date = "2026-06-29"
 
@@ -9,3 +9,7 @@ class_name = "CityChainServer"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["CityChainServer"]
+
+[observability.logs]
+enabled = false
+invocation_logs = true

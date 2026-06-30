@@ -8,16 +8,24 @@
   :root { --salmon: #FA8072; --salmon-dark: #e8604f; --salmon-light: #fdb8b0; --cream: #fff8f5; --ink: #2a1a17; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--cream); color: var(--ink); font-family: Verdana, Geneva, sans-serif; font-size: 13px; min-height: 100vh; }
-  main { max-width: 480px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+  main { max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
   h1 { font-size: 1.4rem; color: var(--salmon-dark); margin: 0 0 0.25rem; }
-  
+
   .subtitle { font-size: 0.85rem; margin: 0 0 0.5rem; }
-  
+
   .attribution { font-size: 0.72rem; margin: 0 0 1.25rem; font-style: italic; }
   .attribution a { color: var(--salmon-dark); text-decoration: none; }
   .attribution a:hover { text-decoration: underline; }
 
   a.back-link { display: inline-block; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--salmon-dark); }
+
+  .layout { display: flex; gap: 1.25rem; align-items: flex-start; }
+  .game-column { flex: 1 1 0; min-width: 0; }
+  .chat-column { width: 240px; flex-shrink: 0; }
+  @media (max-width: 680px) {
+    .layout { flex-direction: column; }
+    .chat-column { width: 100%; }
+  }
 
   .panel { background: #ffffff; border: 1px solid var(--salmon-light); padding: 1.25rem 1.5rem; margin-bottom: 1rem; position: relative; }
 
@@ -25,7 +33,7 @@
   /* Added flex: 1 1 0 and min-width: 0 to force exact 33.3% equal widths for precise centering */
   .stat-box { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0.5rem; border-radius: 6px; border: 1px solid transparent; transition: 0.2s; flex: 1 1 0; min-width: 0; }
   .stat-box.active { background: var(--salmon-light); border: 1px solid var(--salmon-dark); }
-  
+
   .stat-label { width: 100%; color: var(--ink); opacity: 0.7; font-size: 0.75rem; font-weight: bold; margin-bottom: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
   .stat-value { font-size: 1.4rem; font-weight: bold; color: var(--salmon-dark); }
   .timer-value { font-size: 1.8rem; font-weight: bold; color: var(--ink); transition: color 0.2s; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -57,6 +65,15 @@
   .invite-banner { background: var(--cream); border: 1px dashed var(--salmon-dark); padding: 0.8rem; text-align: center; margin-bottom: 1rem; }
   .invite-banner input { width: 100%; text-align: center; border: none; background: transparent; font-weight: bold; color: var(--salmon-dark); cursor: pointer; padding: 0; outline: none; font-size: 0.85rem; transition: color 0.2s;}
 
+  /* Chat panel */
+  .chat-panel { display: flex; flex-direction: column; height: 100%; }
+  .chat-messages { height: 360px; overflow-y: auto; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.6rem; padding-right: 0.25rem; }
+  .chat-msg { line-height: 1.35; word-break: break-word; }
+  .chat-sender { color: var(--salmon-dark); font-weight: bold; }
+  .chat-empty { opacity: 0.5; font-size: 0.78rem; text-align: center; margin-top: 1rem; }
+  #chatForm input { font-size: 0.85rem; }
+  #chatForm button { padding: 0.5rem 0.7rem; }
+
   /* Overlay Modal for Invites */
   #nameOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 248, 245, 0.85); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; }
   .name-box { background: #fff; padding: 2rem; border: 2px solid var(--salmon-dark); text-align: center; width: 90%; max-width: 320px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -82,46 +99,63 @@
   <p class="subtitle">head to head.</p>
   <p class="attribution">city data from <a href="https://simplemaps.com/data/world-cities" target="_blank" rel="noopener noreferrer">simplemaps.com/data/world-cities</a>, used under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
 
-  <div class="panel">
-    <div class="stat-row">
-      <div class="stat-box" id="p1-box">
-        <div class="stat-label" id="p1-name">Waiting...</div>
-        <div class="stat-value" id="p1-score">0</div>
+  <div class="layout">
+    <div class="game-column">
+      <div class="panel">
+        <div class="stat-row">
+          <div class="stat-box" id="p1-box">
+            <div class="stat-label" id="p1-name">Waiting...</div>
+            <div class="stat-value" id="p1-score">0</div>
+          </div>
+          <div class="stat-box" style="border: none; background: transparent;">
+            <div class="stat-label">time left</div>
+            <div class="timer-value" id="timerDisplay">--:--</div>
+          </div>
+          <div class="stat-box" id="p2-box">
+            <div class="stat-label" id="p2-name">Waiting...</div>
+            <div class="stat-value" id="p2-score">0</div>
+          </div>
+        </div>
+
+        <div class="invite-banner" id="inviteBanner">
+          <div class="stat-label" style="margin-bottom: 0.4rem;">CLICK TO COPY INVITE LINK:</div>
+          <input type="text" id="inviteLink" readonly>
+        </div>
+
+        <div class="current-city">
+          <div class="label" id="turnStatus">Waiting for connection...</div>
+          <div class="name" id="currentCity">&mdash;</div>
+          <div class="country" id="currentCountry"></div>
+        </div>
+
+        <form id="guessForm" autocomplete="off">
+          <input type="text" id="guessInput" placeholder="Waiting for match..." disabled />
+          <button type="submit" id="guessBtn" disabled>guess</button>
+        </form>
+
+        <button id="rematchBtn" type="button" style="display:none; width:100%; margin-top:1rem; background:#4a7a3d; border-color: #3b6131;">play again</button>
+
+        <div class="message" id="messageBox"></div>
       </div>
-      <div class="stat-box" style="border: none; background: transparent;">
-        <div class="stat-label">time left</div>
-        <div class="timer-value" id="timerDisplay">--:--</div>
-      </div>
-      <div class="stat-box" id="p2-box">
-        <div class="stat-label" id="p2-name">Waiting...</div>
-        <div class="stat-value" id="p2-score">0</div>
+
+      <div class="panel">
+        <div class="stat-label" style="margin-bottom:0.5rem;">cities used this round</div>
+        <div class="used-list" id="usedList"></div>
       </div>
     </div>
 
-    <div class="invite-banner" id="inviteBanner">
-      <div class="stat-label" style="margin-bottom: 0.4rem;">CLICK TO COPY INVITE LINK:</div>
-      <input type="text" id="inviteLink" readonly>
+    <div class="chat-column">
+      <div class="panel chat-panel">
+        <div class="stat-label" style="margin-bottom:0.5rem;">chat</div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-empty" id="chatEmpty">No messages yet.</div>
+        </div>
+        <form id="chatForm" autocomplete="off">
+          <input type="text" id="chatInput" placeholder="say something..." maxlength="200" />
+          <button type="submit">send</button>
+        </form>
+      </div>
     </div>
-
-    <div class="current-city">
-      <div class="label" id="turnStatus">Waiting for connection...</div>
-      <div class="name" id="currentCity">&mdash;</div>
-      <div class="country" id="currentCountry"></div>
-    </div>
-
-    <form id="guessForm" autocomplete="off">
-      <input type="text" id="guessInput" placeholder="Waiting for match..." disabled />
-      <button type="submit" id="guessBtn" disabled>guess</button>
-    </form>
-
-    <button id="rematchBtn" type="button" style="display:none; width:100%; margin-top:1rem; background:#4a7a3d; border-color: #3b6131;">play again</button>
-
-    <div class="message" id="messageBox"></div>
-  </div>
-
-  <div class="panel">
-    <div class="stat-label" style="margin-bottom:0.5rem;">cities used this round</div>
-    <div class="used-list" id="usedList"></div>
   </div>
 </main>
 
@@ -144,6 +178,24 @@
       localStorage.setItem('cityChainLifetimeGuessed', JSON.stringify(Array.from(fresh)));
     }
 
+    // Stable per-browser identity so a dropped connection can resume its
+    // same seat instead of being treated as a brand new player.
+    function getOrCreatePlayerToken() {
+      let token = localStorage.getItem('cityChainPlayerToken');
+      if (!token) {
+        token = (crypto.randomUUID ? crypto.randomUUID() : ('p-' + Math.random().toString(36).slice(2) + Date.now().toString(36)));
+        localStorage.setItem('cityChainPlayerToken', token);
+      }
+      return token;
+    }
+    const playerToken = getOrCreatePlayerToken();
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str == null ? '' : String(str);
+      return div.innerHTML;
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const roomId = urlParams.get('room');
     let playerName = urlParams.get('name');
@@ -154,37 +206,26 @@
     if (settingsParam) {
       try { parsedSettings = JSON.parse(decodeURIComponent(settingsParam)); } catch(e) {}
     }
-    
-    if (!roomId) window.location.href = "game.html";
 
-    const socket = new WebSocket(`wss://city-chain-server.n8c278skqk.workers.dev/parties/CityChainServer/${roomId}`);
+    if (!roomId) window.location.href = "game.html";
 
     if (!playerName) {
       document.getElementById('nameOverlay').style.display = 'flex';
       setTimeout(() => document.getElementById('modalInput').focus(), 100);
     }
 
-    document.getElementById('modalForm').onsubmit = (e) => {
-      e.preventDefault();
-      playerName = document.getElementById('modalInput').value.trim();
-      document.getElementById('nameOverlay').style.display = 'none';
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ action: "set_name", name: playerName, settings: parsedSettings }));
-      }
-    };
-
     const inviteLinkInput = document.getElementById('inviteLink');
     const currentBaseUrl = window.location.href.split('?')[0];
     inviteLinkInput.value = `${currentBaseUrl}?room=${roomId}`;
-    
-    inviteLinkInput.onclick = () => { 
-      inviteLinkInput.select(); 
-      navigator.clipboard.writeText(inviteLinkInput.value); 
-      
+
+    inviteLinkInput.onclick = () => {
+      inviteLinkInput.select();
+      navigator.clipboard.writeText(inviteLinkInput.value);
+
       const originalValue = inviteLinkInput.value;
       inviteLinkInput.value = "Copied to clipboard!";
       inviteLinkInput.style.color = "#4a7a3d";
-      
+
       setTimeout(() => {
         if (inviteLinkInput.value === "Copied to clipboard!") {
           inviteLinkInput.value = originalValue;
@@ -194,12 +235,211 @@
     };
 
     let myPlayerId = null;
-    let originalMyIndex = null; 
+    let originalMyIndex = null;
     let uiTimerInterval = null;
+    let heartbeatInterval = null;
+    let reconnectAttempts = 0;
+    let reconnectTimeout = null;
+    let roomFull = false;
+    let socket = null;
 
-    socket.onopen = () => {
-      if (playerName) socket.send(JSON.stringify({ action: "set_name", name: playerName, settings: parsedSettings }));
-    };
+    function buildWsUrl() {
+      return `wss://city-chain-server.n8c278skqk.workers.dev/parties/CityChainServer/${roomId}?token=${encodeURIComponent(playerToken)}`;
+    }
+
+    function connectSocket() {
+      socket = new WebSocket(buildWsUrl());
+      attachSocketHandlers();
+    }
+
+    function attachSocketHandlers() {
+      socket.onopen = () => {
+        reconnectAttempts = 0;
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = setInterval(() => {
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ action: "ping" }));
+          }
+        }, 20000);
+
+        if (playerName) {
+          socket.send(JSON.stringify({ action: "set_name", name: playerName, settings: parsedSettings }));
+        }
+      };
+
+      socket.onclose = (event) => {
+        clearInterval(heartbeatInterval);
+
+        if (roomFull) return; // already showing the "room full" state, don't retry
+
+        if (event.code === 4001) {
+          roomFull = true;
+          document.getElementById('nameOverlay').style.display = 'none';
+          document.getElementById('turnStatus').textContent = "This room already has two players.";
+          document.getElementById('currentCity').textContent = '—';
+          document.getElementById('currentCountry').textContent = '';
+          document.getElementById('guessInput').disabled = true;
+          document.getElementById('guessBtn').disabled = true;
+          document.getElementById('inviteBanner').style.display = 'none';
+          showMessage("This room is full — it's a private match between two other players.", "bad");
+          return;
+        }
+
+        // Unexpected drop mid-session: try to reconnect for a little while.
+        // The server holds this seat open for a grace period before giving up.
+        document.getElementById('turnStatus').textContent = "Connection lost. Reconnecting...";
+        if (reconnectAttempts < 12) {
+          reconnectAttempts++;
+          reconnectTimeout = setTimeout(connectSocket, 2000);
+        } else {
+          document.getElementById('turnStatus').textContent = "Couldn't reconnect. Please refresh the page.";
+        }
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "welcome") myPlayerId = data.playerId;
+        if (data.type === "guess_success") recordLifetimeGuess(data.key);
+        if (data.type === "error") showMessage(data.message, "bad");
+
+        if (data.type === "state_update") {
+          const state = data.state;
+          document.getElementById('turnStatus').textContent = state.message;
+
+          let myCurrentIndex = state.players.findIndex(p => p.id === myPlayerId);
+          if (originalMyIndex === null && myCurrentIndex !== -1) originalMyIndex = myCurrentIndex;
+
+          const myDisplayIndex = myCurrentIndex !== -1 ? myCurrentIndex : 0;
+          const oppDisplayIndex = myDisplayIndex === 0 ? 1 : 0;
+          const myScoreIndex = originalMyIndex !== null ? originalMyIndex : 0;
+          const oppScoreIndex = myScoreIndex === 0 ? 1 : 0;
+
+          const myPlayer = state.players[myDisplayIndex];
+          const oppPlayer = state.players[oppDisplayIndex];
+
+          document.getElementById('p1-name').textContent = myPlayer ? myPlayer.name + " (You)" : "Waiting...";
+          document.getElementById('p2-name').textContent = oppPlayer
+            ? oppPlayer.name + (oppPlayer.disconnected ? " (reconnecting...)" : "")
+            : "Waiting...";
+
+          if (state.scores) {
+            document.getElementById('p1-score').textContent = state.scores[myScoreIndex] !== undefined ? state.scores[myScoreIndex] : 0;
+            document.getElementById('p2-score').textContent = state.scores[oppScoreIndex] !== undefined ? state.scores[oppScoreIndex] : 0;
+          }
+
+          if (state.status === "playing") {
+            document.getElementById('inviteBanner').style.display = 'none';
+            document.getElementById('rematchBtn').style.display = 'none';
+          }
+
+          if (state.currentCityEntry) {
+            const name = state.currentCityEntry.c;
+            let idx = -1;
+            for (let i = name.length - 1; i >= 0; i--) {
+              const ch = name.charAt(i);
+              if (ch.toLowerCase() !== ch.toUpperCase()) { idx = i; break; }
+            }
+
+            if (idx !== -1) document.getElementById('currentCity').innerHTML = name.slice(0, idx) + '<span class="next-letter">' + name.slice(idx, idx + 1) + '</span>' + name.slice(idx + 1);
+            else document.getElementById('currentCity').textContent = name;
+            document.getElementById('currentCountry').textContent = isoToFlag(state.currentCityEntry.iso) + ' ' + state.currentCityEntry.co + ' — pop. ' + (state.currentCityEntry.p ? state.currentCityEntry.p.toLocaleString() : 'unknown');
+          }
+
+          if (state.status === "game_over") {
+            document.getElementById('rematchBtn').style.display = 'block';
+            document.getElementById('rematchBtn').textContent = "play again";
+            document.getElementById('rematchBtn').disabled = false;
+            clearInterval(uiTimerInterval);
+            if (state.settings && state.settings.turnDuration === -1) {
+              document.getElementById('timerDisplay').innerHTML = "&infin;";
+            } else {
+              document.getElementById('timerDisplay').textContent = "0:00";
+            }
+            document.getElementById('timerDisplay').classList.remove('panic');
+            document.getElementById('guessInput').disabled = true;
+            document.getElementById('guessBtn').disabled = true;
+            document.getElementById('p1-box').classList.remove('active');
+            document.getElementById('p2-box').classList.remove('active');
+          }
+
+          if (state.status === "playing") {
+            const isMyTurn = (myPlayerId === state.players[state.currentTurn].id);
+            document.getElementById('guessInput').disabled = !isMyTurn;
+            document.getElementById('guessBtn').disabled = !isMyTurn;
+
+            if(isMyTurn) {
+              document.getElementById('guessInput').placeholder = "type a city name...";
+              document.getElementById('guessInput').focus();
+            } else {
+              document.getElementById('guessInput').placeholder = "opponent's turn...";
+            }
+
+            document.getElementById('p1-box').className = state.currentTurn === myDisplayIndex ? "stat-box active" : "stat-box";
+            document.getElementById('p2-box').className = state.currentTurn === oppDisplayIndex ? "stat-box active" : "stat-box";
+
+            // Handle the visual MM:SS or SS:ms timer updates at ~60fps
+            clearInterval(uiTimerInterval);
+            if (state.settings && state.settings.turnDuration === -1) {
+              document.getElementById('timerDisplay').innerHTML = '&infin;';
+              document.getElementById('timerDisplay').classList.remove('panic');
+            } else {
+              uiTimerInterval = setInterval(() => {
+                const diff = state.turnExpires - Date.now();
+
+                if (diff <= 0) {
+                  document.getElementById('timerDisplay').textContent = "0:00";
+                  clearInterval(uiTimerInterval);
+                  return;
+                }
+
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                const ms = Math.floor((diff % 1000) / 10); // 2 digit centiseconds
+
+                let formatted;
+                if (m > 0) {
+                  // If 1 minute or more remains, show M:SS
+                  formatted = m + ':' + String(s).padStart(2, '0');
+                } else {
+                  // If under a minute, show S:ms
+                  formatted = s + ':' + String(ms).padStart(2, '0');
+                }
+
+                document.getElementById('timerDisplay').textContent = formatted;
+
+                if(diff <= 5000) document.getElementById('timerDisplay').classList.add('panic');
+                else document.getElementById('timerDisplay').classList.remove('panic');
+              }, 16);
+            }
+          }
+
+          const list = document.getElementById('usedList');
+          list.innerHTML = '';
+          state.usedCitiesData.forEach(c => {
+            list.innerHTML += `<div class="entry"><span>${isoToFlag(c.iso)} ${c.c}</span> <span style="opacity:0.5">${c.co}</span></div>`;
+          });
+
+          renderChat(state.chatLog || []);
+        }
+      };
+    }
+
+    function renderChat(chatLog) {
+      const box = document.getElementById('chatMessages');
+      const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+
+      if (!chatLog.length) {
+        box.innerHTML = '<div class="chat-empty">No messages yet.</div>';
+        return;
+      }
+
+      box.innerHTML = chatLog.map(m =>
+        `<div class="chat-msg"><span class="chat-sender">${escapeHtml(m.name)}:</span> ${escapeHtml(m.message)}</div>`
+      ).join('');
+
+      if (nearBottom) box.scrollTop = box.scrollHeight;
+    }
 
     const ISO_OVERRIDES = { 'XW': 'PS', 'XG': 'PS', 'XR': 'SJ' };
     function isoToFlag(iso) {
@@ -216,141 +456,43 @@
       setTimeout(() => box.textContent = "", 4000);
     }
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === "welcome") myPlayerId = data.playerId;
-      if (data.type === "guess_success") recordLifetimeGuess(data.key);
-      if (data.type === "error") showMessage(data.message, "bad");
-
-      if (data.type === "state_update") {
-        const state = data.state;
-        document.getElementById('turnStatus').textContent = state.message;
-        
-        let myCurrentIndex = state.players.findIndex(p => p.id === myPlayerId);
-        if (originalMyIndex === null && myCurrentIndex !== -1) originalMyIndex = myCurrentIndex;
-        
-        const myDisplayIndex = myCurrentIndex !== -1 ? myCurrentIndex : 0;
-        const oppDisplayIndex = myDisplayIndex === 0 ? 1 : 0;
-        const myScoreIndex = originalMyIndex !== null ? originalMyIndex : 0;
-        const oppScoreIndex = myScoreIndex === 0 ? 1 : 0;
-
-        const myPlayer = state.players[myDisplayIndex];
-        const oppPlayer = state.players[oppDisplayIndex];
-
-        document.getElementById('p1-name').textContent = myPlayer ? myPlayer.name + " (You)" : "Waiting...";
-        document.getElementById('p2-name').textContent = oppPlayer ? oppPlayer.name : "Waiting...";
-
-        if (state.scores) {
-          document.getElementById('p1-score').textContent = state.scores[myScoreIndex] !== undefined ? state.scores[myScoreIndex] : 0;
-          document.getElementById('p2-score').textContent = state.scores[oppScoreIndex] !== undefined ? state.scores[oppScoreIndex] : 0;
-        }
-
-        if (state.status === "playing") {
-          document.getElementById('inviteBanner').style.display = 'none';
-          document.getElementById('rematchBtn').style.display = 'none';
-        }
-
-        if (state.currentCityEntry) {
-          const name = state.currentCityEntry.c;
-          let idx = -1;
-          for (let i = name.length - 1; i >= 0; i--) {
-            const ch = name.charAt(i);
-            if (ch.toLowerCase() !== ch.toUpperCase()) { idx = i; break; }
-          }
-          
-          if (idx !== -1) document.getElementById('currentCity').innerHTML = name.slice(0, idx) + '<span class="next-letter">' + name.slice(idx, idx + 1) + '</span>' + name.slice(idx + 1);
-          else document.getElementById('currentCity').textContent = name;
-          document.getElementById('currentCountry').textContent = isoToFlag(state.currentCityEntry.iso) + ' ' + state.currentCityEntry.co + ' — pop. ' + (state.currentCityEntry.p ? state.currentCityEntry.p.toLocaleString() : 'unknown');
-        }
-
-        if (state.status === "game_over") {
-          document.getElementById('rematchBtn').style.display = 'block';
-          document.getElementById('rematchBtn').textContent = "play again";
-          document.getElementById('rematchBtn').disabled = false;
-          clearInterval(uiTimerInterval);
-          if (state.settings && state.settings.turnDuration === -1) {
-            document.getElementById('timerDisplay').innerHTML = "&infin;";
-          } else {
-            document.getElementById('timerDisplay').textContent = "0:00";
-          }
-          document.getElementById('timerDisplay').classList.remove('panic');
-          document.getElementById('guessInput').disabled = true;
-          document.getElementById('guessBtn').disabled = true;
-          document.getElementById('p1-box').classList.remove('active');
-          document.getElementById('p2-box').classList.remove('active');
-        }
-
-        if (state.status === "playing") {
-          const isMyTurn = (myPlayerId === state.players[state.currentTurn].id);
-          document.getElementById('guessInput').disabled = !isMyTurn;
-          document.getElementById('guessBtn').disabled = !isMyTurn;
-          
-          if(isMyTurn) {
-            document.getElementById('guessInput').placeholder = "type a city name...";
-            document.getElementById('guessInput').focus();
-          } else {
-            document.getElementById('guessInput').placeholder = "opponent's turn...";
-          }
-
-          document.getElementById('p1-box').className = state.currentTurn === myDisplayIndex ? "stat-box active" : "stat-box";
-          document.getElementById('p2-box').className = state.currentTurn === oppDisplayIndex ? "stat-box active" : "stat-box";
-          
-          // Handle the visual MM:SS or SS:ms timer updates at ~60fps
-          clearInterval(uiTimerInterval);
-          if (state.settings && state.settings.turnDuration === -1) {
-            document.getElementById('timerDisplay').innerHTML = '&infin;';
-            document.getElementById('timerDisplay').classList.remove('panic');
-          } else {
-            uiTimerInterval = setInterval(() => {
-              const diff = state.turnExpires - Date.now();
-              
-              if (diff <= 0) {
-                document.getElementById('timerDisplay').textContent = "0:00";
-                clearInterval(uiTimerInterval);
-                return;
-              }
-              
-              const m = Math.floor(diff / 60000);
-              const s = Math.floor((diff % 60000) / 1000);
-              const ms = Math.floor((diff % 1000) / 10); // 2 digit centiseconds
-              
-              let formatted;
-              if (m > 0) {
-                // If 1 minute or more remains, show M:SS
-                formatted = m + ':' + String(s).padStart(2, '0');
-              } else {
-                // If under a minute, show S:ms
-                formatted = s + ':' + String(ms).padStart(2, '0');
-              }
-                                
-              document.getElementById('timerDisplay').textContent = formatted;
-              
-              if(diff <= 5000) document.getElementById('timerDisplay').classList.add('panic');
-              else document.getElementById('timerDisplay').classList.remove('panic');
-            }, 16);
-          }
-        }
-
-        const list = document.getElementById('usedList');
-        list.innerHTML = '';
-        state.usedCitiesData.forEach(c => {
-          list.innerHTML += `<div class="entry"><span>${isoToFlag(c.iso)} ${c.c}</span> <span style="opacity:0.5">${c.co}</span></div>`;
-        });
+    document.getElementById('modalForm').onsubmit = (e) => {
+      e.preventDefault();
+      playerName = document.getElementById('modalInput').value.trim();
+      document.getElementById('nameOverlay').style.display = 'none';
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ action: "set_name", name: playerName, settings: parsedSettings }));
       }
     };
 
     document.getElementById('guessForm').onsubmit = (e) => {
       e.preventDefault();
-      socket.send(JSON.stringify({ action: "guess", city: document.getElementById('guessInput').value }));
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ action: "guess", city: document.getElementById('guessInput').value }));
+      }
       document.getElementById('guessInput').value = '';
     };
 
+    document.getElementById('chatForm').onsubmit = (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ action: "chat", message: text }));
+      }
+      input.value = '';
+    };
+
     document.getElementById('rematchBtn').onclick = () => {
-      socket.send(JSON.stringify({ action: "rematch" }));
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ action: "rematch" }));
+      }
       document.getElementById('rematchBtn').textContent = "waiting for opponent...";
       document.getElementById('rematchBtn').disabled = true;
     };
+
+    connectSocket();
 </script>
 </body>
 </html>
