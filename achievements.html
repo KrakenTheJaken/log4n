@@ -199,14 +199,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--salmon-light);
+    background: var(--salmon-light); /* Default fallback */
     border: 1px solid var(--salmon-dark);
     padding: 0.5rem 0.75rem;
     font-size: 0.85rem;
     font-weight: bold;
     color: var(--ink);
   }
-  .result-header.complete { background: #dff0d4; border-color: #7fae5e; color: #3c6b27; }
+  .result-header.complete { background: #dff0d4 !important; border-color: #7fae5e; color: #3c6b27; }
   .result-header .result-progress { font-weight: normal; font-size: 0.78rem; }
 
   .tier-list { border: 1px solid var(--salmon-light); border-top: none; max-height: 320px; overflow-y: auto; }
@@ -394,9 +394,16 @@
     const foundCount = topN.filter(c => lifetimeGuessed.has(c.a.toLowerCase().trim())).length;
     const total = topN.length;
     const complete = foundCount === total && total > 0;
+    const percent = total > 0 ? (foundCount / total) * 100 : 0;
 
     const header = document.createElement('div');
     header.className = 'result-header' + (complete ? ' complete' : '');
+    
+    // Add visual progress bar background if not fully complete
+    if (!complete && total > 0) {
+      header.style.background = `linear-gradient(to right, #dff0d4 ${percent}%, var(--salmon-light) ${percent}%)`;
+    }
+
     header.innerHTML = '<span>' + title + (complete ? ' \u2713' : '') + '</span>' +
       '<span class="result-progress">' + foundCount + '/' + total + '</span>';
     resultEl.appendChild(header);
@@ -584,14 +591,20 @@
     activeOptionIndex = index;
   }
 
-  countrySearch.addEventListener('focus', openCountryDropdown);
+  countrySearch.addEventListener('focus', function() {
+    this.select(); // Automatically highlights the text inside the input
+    openCountryDropdown();
+  });
+  
   countrySearch.addEventListener('input', () => {
     openCountryDropdown();
   });
+  
   countrySearch.addEventListener('blur', () => {
     // Small delay so a mousedown-selection (above) still registers first.
     setTimeout(closeCountryDropdown, 100);
   });
+  
   countrySearch.addEventListener('keydown', (e) => {
     const options = Array.from(countryDropdown.querySelectorAll('.country-option'));
     if (e.key === 'ArrowDown') {
