@@ -195,6 +195,7 @@
 
   <div class="panel">
     
+    <!-- SINGLE PLAYER UI (Hidden when in Lobby mode) -->
     <div id="singlePlayerUI">
       <div class="stat-row">
         <div class="stat-box">
@@ -258,6 +259,7 @@
       </div>
     </div>
 
+    <!-- LOBBY UI -->
     <div id="lobbyUI" style="display: none; text-align: center; padding: 1.5rem 0;">
       <div class="stat-label" style="font-size: 0.9rem; margin-bottom: 1.5rem; color: var(--ink);">
         Create or join a private room.
@@ -266,20 +268,16 @@
       <form id="lobbyForm" style="display: flex; flex-direction: column; gap: 0.75rem; align-items: center; margin-bottom: 1rem;">
         <input type="text" id="playerNameInput" placeholder="Your Name (e.g. Trevor Moore)" required style="width: 100%; max-width: 280px; text-align: center;" />
         
+        <!-- Extensible Settings Panel -->
         <div style="width: 100%; max-width: 280px; background: var(--cream); border: 1px solid var(--salmon-light); padding: 0.75rem; text-align: left;">
           <div style="font-size: 0.75rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--salmon-dark);">Room Settings</div>
           
-          <label style="display: block; font-size: 0.8rem; margin-bottom: 0.25rem;">Turn Timer</label>
+          <label style="display: block; font-size: 0.8rem; margin-bottom: 0.25rem;">Turn Timer (seconds)</label>
           <div style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem;">
-             <select id="timerSelect" style="flex: 1; padding: 0.3rem; border: 1px solid var(--salmon-light); font-family: inherit;">
-               <option value="5">5 Seconds</option>
-               <option value="15" selected>15 Seconds</option>
-               <option value="30">30 Seconds</option>
-               <option value="custom">Custom...</option>
-             </select>
-             <input type="number" id="customTimerInput" placeholder="-1 for &infin;" style="display: none; width: 80px; padding: 0.3rem; border: 1px solid var(--salmon-light); text-align: center;" />
+             <input type="number" id="customTimerInput" value="15" placeholder="-1 for &infin;" style="width: 100%; padding: 0.3rem; border: 1px solid var(--salmon-light); text-align: center;" />
           </div>
-          </div>
+          <!-- Future dropdowns (e.g., Continents) can be added right here -->
+        </div>
 
         <div style="display: flex; gap: 0.5rem; width: 100%; max-width: 280px;">
           <input type="text" id="roomInput" placeholder="Room Code" required style="flex: 1; text-align: center;" />
@@ -296,6 +294,7 @@
 
   </div>
 
+  <!-- History panel only applies to single-player -->
   <div class="panel" id="historyPanel">
     <div class="stat-label" style="margin-bottom:0.5rem;">cities used this round</div>
     <div class="used-list" id="usedList"></div>
@@ -708,11 +707,6 @@
   const inviteCode = urlParams.get('invite');
   if (inviteCode) { document.getElementById('roomInput').value = inviteCode; switchMode('lobby'); }
 
-  // Custom Timer Toggle
-  document.getElementById('timerSelect').addEventListener('change', (e) => {
-    document.getElementById('customTimerInput').style.display = e.target.value === 'custom' ? 'block' : 'none';
-  });
-
   document.getElementById('randomRoomBtn').addEventListener('click', () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
@@ -732,9 +726,8 @@
     const roomCode = document.getElementById('roomInput').value.trim();
     const playerName = document.getElementById('playerNameInput').value.trim();
     
-    // Gather settings
-    const timerVal = document.getElementById('timerSelect').value;
-    const finalTimer = timerVal === 'custom' ? (document.getElementById('customTimerInput').value || -1) : timerVal;
+    // Gather settings from the custom input
+    const finalTimer = document.getElementById('customTimerInput').value || 15;
     
     // Bundle into an object (easy to add region/country filters here later)
     const roomSettings = { turnDuration: parseInt(finalTimer, 10) };

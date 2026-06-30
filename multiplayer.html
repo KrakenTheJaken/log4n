@@ -27,7 +27,7 @@
   
   .stat-label { color: var(--ink); opacity: 0.7; font-size: 0.75rem; font-weight: bold; margin-bottom: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
   .stat-value { font-size: 1.4rem; font-weight: bold; color: var(--salmon-dark); }
-  .timer-value { font-size: 1.8rem; font-weight: bold; color: var(--ink); transition: color 0.2s;}
+  .timer-value { font-size: 1.8rem; font-weight: bold; color: var(--ink); transition: color 0.2s; font-variant-numeric: tabular-nums; }
   .timer-value.panic { color: red; }
 
   .current-city { text-align: center; margin: 0.5rem 0 1.25rem; }
@@ -89,7 +89,7 @@
       </div>
       <div class="stat-box" style="border: none; background: transparent;">
         <div class="stat-label">time left</div>
-        <div class="timer-value" id="timerDisplay">15</div>
+        <div class="timer-value" id="timerDisplay">00:00:00</div>
       </div>
       <div class="stat-box" id="p2-box">
         <div class="stat-label" id="p2-name">Waiting...</div>
@@ -268,7 +268,11 @@
           document.getElementById('rematchBtn').textContent = "play again";
           document.getElementById('rematchBtn').disabled = false;
           clearInterval(uiTimerInterval);
-          document.getElementById('timerDisplay').textContent = "0";
+          if (state.settings && state.settings.turnDuration === -1) {
+            document.getElementById('timerDisplay').innerHTML = "&infin;";
+          } else {
+            document.getElementById('timerDisplay').textContent = "00:00:00";
+          }
           document.getElementById('timerDisplay').classList.remove('panic');
           document.getElementById('guessInput').disabled = true;
           document.getElementById('guessBtn').disabled = true;
@@ -291,18 +295,34 @@
           document.getElementById('p1-box').className = state.currentTurn === myDisplayIndex ? "stat-box active" : "stat-box";
           document.getElementById('p2-box').className = state.currentTurn === oppDisplayIndex ? "stat-box active" : "stat-box";
           
-          // Handle the visual timer updates
+          // Handle the visual MM:SS:ms timer updates at ~60fps
           clearInterval(uiTimerInterval);
           if (state.settings && state.settings.turnDuration === -1) {
             document.getElementById('timerDisplay').innerHTML = '&infin;';
             document.getElementById('timerDisplay').classList.remove('panic');
           } else {
             uiTimerInterval = setInterval(() => {
-              const timeLeft = Math.max(0, Math.ceil((state.turnExpires - Date.now()) / 1000));
-              document.getElementById('timerDisplay').textContent = timeLeft;
-              if(timeLeft <= 5) document.getElementById('timerDisplay').classList.add('panic');
+              const diff = state.turnExpires - Date.now();
+              
+              if (diff <= 0) {
+                document.getElementById('timerDisplay').textContent = "00:00:00";
+                clearInterval(uiTimerInterval);
+                return;
+              }
+              
+              const m = Math.floor(diff / 60000);
+              const s = Math.floor((diff % 60000) / 1000);
+              const ms = Math.floor((diff % 1000) / 10); // 2 digit centiseconds for clean look
+              
+              const formatted = String(m).padStart(2, '0') + ':' + 
+                                String(s).padStart(2, '0') + ':' + 
+                                String(ms).padStart(2, '0');
+                                
+              document.getElementById('timerDisplay').textContent = formatted;
+              
+              if(diff <= 5000) document.getElementById('timerDisplay').classList.add('panic');
               else document.getElementById('timerDisplay').classList.remove('panic');
-            }, 100);
+            }, 16);
           }
         }
 
