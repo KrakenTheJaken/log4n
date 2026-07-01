@@ -8,7 +8,7 @@
   :root { --salmon: #FA8072; --salmon-dark: #e8604f; --salmon-light: #fdb8b0; --cream: #fff8f5; --ink: #2a1a17; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--cream); color: var(--ink); font-family: Verdana, Geneva, sans-serif; font-size: 13px; min-height: 100vh; }
-  main { max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+  main { max-width: 480px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
   h1 { font-size: 1.4rem; color: var(--salmon-dark); margin: 0 0 0.25rem; }
 
   .subtitle { font-size: 0.85rem; margin: 0 0 0.5rem; }
@@ -18,14 +18,6 @@
   .attribution a:hover { text-decoration: underline; }
 
   a.back-link { display: inline-block; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--salmon-dark); }
-
-  .layout { display: flex; gap: 1.25rem; align-items: flex-start; }
-  .game-column { flex: 1 1 0; min-width: 0; }
-  .chat-column { width: 240px; flex-shrink: 0; }
-  @media (max-width: 680px) {
-    .layout { flex-direction: column; }
-    .chat-column { width: 100%; }
-  }
 
   .panel { background: #ffffff; border: 1px solid var(--salmon-light); padding: 1.25rem 1.5rem; margin-bottom: 1rem; position: relative; }
 
@@ -65,15 +57,6 @@
   .invite-banner { background: var(--cream); border: 1px dashed var(--salmon-dark); padding: 0.8rem; text-align: center; margin-bottom: 1rem; }
   .invite-banner input { width: 100%; text-align: center; border: none; background: transparent; font-weight: bold; color: var(--salmon-dark); cursor: pointer; padding: 0; outline: none; font-size: 0.85rem; transition: color 0.2s;}
 
-  /* Chat panel */
-  .chat-panel { display: flex; flex-direction: column; height: 100%; }
-  .chat-messages { height: 360px; overflow-y: auto; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.6rem; padding-right: 0.25rem; }
-  .chat-msg { line-height: 1.35; word-break: break-word; }
-  .chat-sender { color: var(--salmon-dark); font-weight: bold; }
-  .chat-empty { opacity: 0.5; font-size: 0.78rem; text-align: center; margin-top: 1rem; }
-  #chatForm input { font-size: 0.85rem; }
-  #chatForm button { padding: 0.5rem 0.7rem; }
-
   /* Overlay Modal for Invites */
   #nameOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 248, 245, 0.85); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; }
   .name-box { background: #fff; padding: 2rem; border: 2px solid var(--salmon-dark); text-align: center; width: 90%; max-width: 320px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -99,63 +82,46 @@
   <p class="subtitle">head to head.</p>
   <p class="attribution">city data from <a href="https://simplemaps.com/data/world-cities" target="_blank" rel="noopener noreferrer">simplemaps.com/data/world-cities</a>, used under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
 
-  <div class="layout">
-    <div class="game-column">
-      <div class="panel">
-        <div class="stat-row">
-          <div class="stat-box" id="p1-box">
-            <div class="stat-label" id="p1-name">Waiting...</div>
-            <div class="stat-value" id="p1-score">0</div>
-          </div>
-          <div class="stat-box" style="border: none; background: transparent;">
-            <div class="stat-label">time left</div>
-            <div class="timer-value" id="timerDisplay">--:--</div>
-          </div>
-          <div class="stat-box" id="p2-box">
-            <div class="stat-label" id="p2-name">Waiting...</div>
-            <div class="stat-value" id="p2-score">0</div>
-          </div>
-        </div>
-
-        <div class="invite-banner" id="inviteBanner">
-          <div class="stat-label" style="margin-bottom: 0.4rem;">CLICK TO COPY INVITE LINK:</div>
-          <input type="text" id="inviteLink" readonly>
-        </div>
-
-        <div class="current-city">
-          <div class="label" id="turnStatus">Waiting for connection...</div>
-          <div class="name" id="currentCity">&mdash;</div>
-          <div class="country" id="currentCountry"></div>
-        </div>
-
-        <form id="guessForm" autocomplete="off">
-          <input type="text" id="guessInput" placeholder="Waiting for match..." disabled />
-          <button type="submit" id="guessBtn" disabled>guess</button>
-        </form>
-
-        <button id="rematchBtn" type="button" style="display:none; width:100%; margin-top:1rem; background:#4a7a3d; border-color: #3b6131;">play again</button>
-
-        <div class="message" id="messageBox"></div>
+  <div class="panel">
+    <div class="stat-row">
+      <div class="stat-box" id="p1-box">
+        <div class="stat-label" id="p1-name">Waiting...</div>
+        <div class="stat-value" id="p1-score">0</div>
       </div>
-
-      <div class="panel">
-        <div class="stat-label" style="margin-bottom:0.5rem;">cities used this round</div>
-        <div class="used-list" id="usedList"></div>
+      <div class="stat-box" style="border: none; background: transparent;">
+        <div class="stat-label">time left</div>
+        <div class="timer-value" id="timerDisplay">--:--</div>
+      </div>
+      <div class="stat-box" id="p2-box">
+        <div class="stat-label" id="p2-name">Waiting...</div>
+        <div class="stat-value" id="p2-score">0</div>
       </div>
     </div>
 
-    <div class="chat-column">
-      <div class="panel chat-panel">
-        <div class="stat-label" style="margin-bottom:0.5rem;">chat</div>
-        <div class="chat-messages" id="chatMessages">
-          <div class="chat-empty" id="chatEmpty">No messages yet.</div>
-        </div>
-        <form id="chatForm" autocomplete="off">
-          <input type="text" id="chatInput" placeholder="say something..." maxlength="200" />
-          <button type="submit">send</button>
-        </form>
-      </div>
+    <div class="invite-banner" id="inviteBanner">
+      <div class="stat-label" style="margin-bottom: 0.4rem;">CLICK TO COPY INVITE LINK:</div>
+      <input type="text" id="inviteLink" readonly>
     </div>
+
+    <div class="current-city">
+      <div class="label" id="turnStatus">Waiting for connection...</div>
+      <div class="name" id="currentCity">&mdash;</div>
+      <div class="country" id="currentCountry"></div>
+    </div>
+
+    <form id="guessForm" autocomplete="off">
+      <input type="text" id="guessInput" placeholder="Waiting for match..." disabled />
+      <button type="submit" id="guessBtn" disabled>guess</button>
+    </form>
+
+    <button id="rematchBtn" type="button" style="display:none; width:100%; margin-top:1rem; background:#4a7a3d; border-color: #3b6131;">play again</button>
+
+    <div class="message" id="messageBox"></div>
+  </div>
+
+  <div class="panel">
+    <div class="stat-label" style="margin-bottom:0.5rem;">cities used this round</div>
+    <div class="used-list" id="usedList"></div>
   </div>
 </main>
 
@@ -189,12 +155,6 @@
       return token;
     }
     const playerToken = getOrCreatePlayerToken();
-
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str == null ? '' : String(str);
-      return div.innerHTML;
-    }
 
     const urlParams = new URLSearchParams(window.location.search);
     const roomId = urlParams.get('room');
@@ -419,26 +379,8 @@
           state.usedCitiesData.forEach(c => {
             list.innerHTML += `<div class="entry"><span>${isoToFlag(c.iso)} ${c.c}</span> <span style="opacity:0.5">${c.co}</span></div>`;
           });
-
-          renderChat(state.chatLog || []);
         }
       };
-    }
-
-    function renderChat(chatLog) {
-      const box = document.getElementById('chatMessages');
-      const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
-
-      if (!chatLog.length) {
-        box.innerHTML = '<div class="chat-empty">No messages yet.</div>';
-        return;
-      }
-
-      box.innerHTML = chatLog.map(m =>
-        `<div class="chat-msg"><span class="chat-sender">${escapeHtml(m.name)}:</span> ${escapeHtml(m.message)}</div>`
-      ).join('');
-
-      if (nearBottom) box.scrollTop = box.scrollHeight;
     }
 
     const ISO_OVERRIDES = { 'XW': 'PS', 'XG': 'PS', 'XR': 'SJ' };
@@ -471,17 +413,6 @@
         socket.send(JSON.stringify({ action: "guess", city: document.getElementById('guessInput').value }));
       }
       document.getElementById('guessInput').value = '';
-    };
-
-    document.getElementById('chatForm').onsubmit = (e) => {
-      e.preventDefault();
-      const input = document.getElementById('chatInput');
-      const text = input.value.trim();
-      if (!text) return;
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ action: "chat", message: text }));
-      }
-      input.value = '';
     };
 
     document.getElementById('rematchBtn').onclick = () => {

@@ -9,7 +9,6 @@ CITIES_DATA.forEach(entry => {
 });
 
 const RECONNECT_GRACE_MS = 20000; // how long a dropped player's seat stays reserved
-const MAX_CHAT_LOG = 50;
 
 export class CityChainServer extends Server {
   constructor(ctx, env) {
@@ -27,8 +26,7 @@ export class CityChainServer extends Server {
       winner: null,
       rematchVotes: [],
       message: "Waiting for opponent to join...",
-      settings: null, // Locked in when first player connects
-      chatLog: []
+      settings: null // Locked in when first player connects
     };
     this.timerId = null;
     this.lastLoserIndex = null;
@@ -178,18 +176,6 @@ export class CityChainServer extends Server {
           this.broadcastState();
         }
       }
-      return;
-    }
-
-    if (data.action === "chat") {
-      const player = this.gameState.players.find(p => p.id === connection.id);
-      if (!player || typeof data.message !== "string") return;
-      const text = data.message.trim().slice(0, 200);
-      if (!text) return;
-
-      this.gameState.chatLog.push({ name: player.name, message: text, ts: Date.now() });
-      if (this.gameState.chatLog.length > MAX_CHAT_LOG) this.gameState.chatLog.shift();
-      this.broadcastState();
       return;
     }
 
