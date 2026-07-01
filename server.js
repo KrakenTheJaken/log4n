@@ -26,7 +26,7 @@ export class CityChainServer extends Server {
       winner: null,
       rematchVotes: [],
       message: "Waiting for opponent to join...",
-      settings: null 
+      settings: { turnDuration: 15 } // strict default
     };
     this.timerId = null;
     this.lastLoserIndex = null;
@@ -40,7 +40,10 @@ export class CityChainServer extends Server {
     const existingPlayer = token ? this.gameState.players.find(p => p.token === token) : null;
     
     if (existingPlayer) {
-      // Reconnect flow: seamlessly update the ID for the ghost seat.
+      // If they refresh or open a new tab, explicitly tell the OLD tab to shut down 
+      // so it doesn't become a confusing "zombie" tab on their screen.
+      this.broadcast(JSON.stringify({ type: "superseded", oldId: existingPlayer.id }));
+
       existingPlayer.id = connection.id;
       existingPlayer.disconnectedAt = null;
 
@@ -71,7 +74,7 @@ export class CityChainServer extends Server {
   }
 
   onClose(connection) {
-    // Ensure we only process disconnects from active socket owners
+    // Only process disconnects from active socket owners (ignores closed zombie tabs)
     const player = this.gameState.players.find(p => p.id === connection.id);
     if (!player) return;
 
@@ -82,9 +85,10 @@ export class CityChainServer extends Server {
       this.gameState.message = `${player.name} disconnected. Waiting for them...`;
       this.broadcastState();
 
-      // We no longer pause `timerId`. The game clock keeps ticking natively.
+      // CHESS CLOCK LOGIC: We do NOT clear `this.timerId`. The game clock keeps ticking natively.
       
-      // Start a background forfeit timer in case they drop when it's not their turn.
+      // Start a background forfeit timer in case they drop when it's NOT their turn,
+      // or if they are on infinite mode.
       const token = player.token;
       this.disconnectTimers[token] = setTimeout(() => {
         delete this.disconnectTimers[token];
@@ -95,6 +99,9 @@ export class CityChainServer extends Server {
           this.gameState.scores[winningIndex]++;
           this.lastLoserIndex = leavingIdx;
           this.gameState.status = "game_over";
+          this.gameState.turnExpires = null;
+          if (this.timerId) clearTimeout(this.timerId);
+          
           const winnerName = this.gameState.players[winningIndex]?.name || "Opponent";
           this.gameState.message = `${stillGone.name} abandoned the match. ${winnerName} wins!`;
           this.broadcastState();
@@ -132,7 +139,7 @@ export class CityChainServer extends Server {
 
     const duration = this.gameState.settings.turnDuration;
     
-    // Handle Infinite mode safely
+    // Handle Infinite mode strictly
     if (duration === -1) {
       this.gameState.turnExpires = null;
       this.broadcastState();
@@ -145,6 +152,7 @@ export class CityChainServer extends Server {
 
     this.timerId = setTimeout(() => {
       this.gameState.status = "game_over";
+      this.gameState.turnExpires = null;
       const losingIndex = this.gameState.currentTurn;
       const winningIndex = losingIndex === 0 ? 1 : 0;
       this.gameState.scores[winningIndex]++;
@@ -165,9 +173,12 @@ export class CityChainServer extends Server {
         player.name = data.name.substring(0, 15).trim();
         player.isReady = true;
 
-        if (!this.gameState.settings) {
+        // CRITICAL FIX: Force the room to update its settings if the game hasn't started.
+        // This stops old rooms from being permanently stuck on Infinite Mode.
+        if (data.settings && this.gameState.status !== "playing") {
+          const parsed = parseInt(data.settings.turnDuration);
           this.gameState.settings = {
-            turnDuration: data.settings?.turnDuration !== undefined ? data.settings.turnDuration : 15
+            turnDuration: isNaN(parsed) ? 15 : parsed
           };
         }
 
@@ -182,7 +193,11 @@ export class CityChainServer extends Server {
 
     if (data.action === "guess" && this.gameState.status === "playing") {
       const activePlayer = this.gameState.players[this.gameState.currentTurn];
-      if (!activePlayer || connection.id !== activePlayer.id) return;
+      
+      if (!activePlayer || connection.id !== activePlayer.id) {
+        connection.send(JSON.stringify({ type: "error", message: "It's not your turn, or you are connected in another tab." }));
+        return;
+      }
 
       const guessKey = data.city.trim().toLowerCase();
       if (this.getFirstLetter(guessKey) !== this.gameState.requiredLetter) {
@@ -218,7 +233,7 @@ export class CityChainServer extends Server {
 
   broadcastState() {
     const stateToSend = { ...this.gameState };
-    // Pass the exact relative ms to the client so the UI matches the server perfectly
+    // Pass the exact relative ms to the client so the UI timer syncs flawlessly
     if (stateToSend.turnExpires) {
       stateToSend.syncRemainingMs = Math.max(0, stateToSend.turnExpires - Date.now());
     }

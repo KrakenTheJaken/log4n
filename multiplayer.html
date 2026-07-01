@@ -225,7 +225,7 @@
       socket.onclose = (event) => {
         clearInterval(heartbeatInterval);
 
-        if (roomFull) return;
+        if (roomFull) return; // Prevent loop if room was marked full or hijacked
 
         if (event.code === 4001) {
           roomFull = true;
@@ -240,15 +240,6 @@
           return;
         }
 
-        if (event.code === 4002) {
-          roomFull = true;
-          document.getElementById('turnStatus').textContent = "Already connected in another tab.";
-          document.getElementById('guessInput').disabled = true;
-          document.getElementById('guessBtn').disabled = true;
-          showMessage("This seat is already connected from another tab or device.", "bad");
-          return;
-        }
-
         document.getElementById('turnStatus').textContent = "Connection lost. Reconnecting...";
         if (reconnectAttempts < 12) {
           reconnectAttempts++;
@@ -260,6 +251,17 @@
 
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
+
+        // Explicitly handle "superseded" if you open a second tab
+        if (data.type === "superseded" && data.oldId === myPlayerId) {
+          roomFull = true; // stops auto-reconnects
+          socket.close();
+          document.getElementById('turnStatus').textContent = "Disabled: Connected in another tab.";
+          document.getElementById('guessInput').disabled = true;
+          document.getElementById('guessBtn').disabled = true;
+          showMessage("You opened the game in a newer tab. This tab is now disabled.", "bad");
+          return;
+        }
 
         if (data.type === "welcome") myPlayerId = data.playerId;
         if (data.type === "guess_success") recordLifetimeGuess(data.key);
@@ -283,7 +285,7 @@
           document.getElementById('p1-name').textContent = myPlayer ? myPlayer.name + " (You)" : "Waiting...";
           
           document.getElementById('p2-name').textContent = oppPlayer
-            ? oppPlayer.name + (oppPlayer.disconnectedAt !== null ? " (disconnected)" : "")
+            ? oppPlayer.name + (oppPlayer.disconnectedAt !== null ? " (away)" : "")
             : "Waiting...";
 
           if (state.scores) {
@@ -337,7 +339,7 @@
               document.getElementById('guessInput').placeholder = "type a city name...";
               document.getElementById('guessInput').focus();
             } else {
-              document.getElementById('guessInput').placeholder = isOpponentGone ? "opponent disconnected..." : "opponent's turn...";
+              document.getElementById('guessInput').placeholder = isOpponentGone ? "opponent is away..." : "opponent's turn...";
             }
 
             document.getElementById('p1-box').className = state.currentTurn === myDisplayIndex ? "stat-box active" : "stat-box";
