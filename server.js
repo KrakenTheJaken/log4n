@@ -8,7 +8,7 @@ CITIES_DATA.forEach(entry => {
   cityIndex.get(key).push(entry);
 });
 
-const RECONNECT_GRACE_MS = 20000; // 20 seconds
+const RECONNECT_GRACE_MS = 20000; // 20 seconds background forfeit timer
 
 export class CityChainServer extends Server {
   constructor(ctx, env) {
@@ -23,7 +23,6 @@ export class CityChainServer extends Server {
       currentCityEntry: null,
       requiredLetter: null,
       turnExpires: null,
-      turnTimeRemaining: null, // Tracks time left on pause
       winner: null,
       rematchVotes: [],
       message: "Waiting for opponent to join...",
@@ -41,14 +40,7 @@ export class CityChainServer extends Server {
     const existingPlayer = token ? this.gameState.players.find(p => p.token === token) : null;
     
     if (existingPlayer) {
-      // Reject if the seat is currently actively connected elsewhere
-      if (existingPlayer.disconnectedAt === null) {
-        connection.send(JSON.stringify({ type: "error", message: "That seat is already connected elsewhere." }));
-        connection.close(4002, "Seat already active");
-        return;
-      }
-
-      const reconnectIndex = this.gameState.players.indexOf(existingPlayer);
+      // Reconnect flow: seamlessly update the ID for the ghost seat.
       existingPlayer.id = connection.id;
       existingPlayer.disconnectedAt = null;
 
@@ -61,17 +53,12 @@ export class CityChainServer extends Server {
 
       if (this.gameState.status === "playing") {
         this.gameState.message = `${existingPlayer.name} reconnected!`;
-        // Resume turn timer with saved remaining time
-        if (this.gameState.currentTurn === reconnectIndex && !this.timerId) {
-          this.startTurnTimer(true); 
-          return;
-        }
       }
       this.broadcastState();
       return;
     }
 
-    // Lock the room to exactly 2 slots permanently 
+    // Permanent Room Lock: Reject any 3rd token. Ghosts live forever.
     if (this.gameState.players.length >= 2) {
       connection.send(JSON.stringify({ type: "error", message: "Room is full!" }));
       connection.close(4001, "Room full");
@@ -84,26 +71,20 @@ export class CityChainServer extends Server {
   }
 
   onClose(connection) {
+    // Ensure we only process disconnects from active socket owners
     const player = this.gameState.players.find(p => p.id === connection.id);
-    this.gameState.rematchVotes = this.gameState.rematchVotes.filter(id => id !== connection.id);
     if (!player) return;
 
     player.disconnectedAt = Date.now();
+    this.gameState.rematchVotes = this.gameState.rematchVotes.filter(id => id !== connection.id);
 
     if (this.gameState.status === "playing") {
-      const leavingIndex = this.gameState.players.indexOf(player);
-      this.gameState.message = `${player.name} disconnected. Waiting for them to reconnect...`;
-
-      // Pause timer and save remaining time so they can't exploit refreshes
-      if (this.gameState.currentTurn === leavingIndex && this.timerId) {
-        clearTimeout(this.timerId);
-        this.timerId = null;
-        this.gameState.turnTimeRemaining = Math.max(0, this.gameState.turnExpires - Date.now());
-        this.gameState.turnExpires = null;
-      }
-
+      this.gameState.message = `${player.name} disconnected. Waiting for them...`;
       this.broadcastState();
 
+      // We no longer pause `timerId`. The game clock keeps ticking natively.
+      
+      // Start a background forfeit timer in case they drop when it's not their turn.
       const token = player.token;
       this.disconnectTimers[token] = setTimeout(() => {
         delete this.disconnectTimers[token];
@@ -115,18 +96,12 @@ export class CityChainServer extends Server {
           this.lastLoserIndex = leavingIdx;
           this.gameState.status = "game_over";
           const winnerName = this.gameState.players[winningIndex]?.name || "Opponent";
-          this.gameState.message = `${stillGone.name} didn't reconnect in time. ${winnerName} wins!`;
+          this.gameState.message = `${stillGone.name} abandoned the match. ${winnerName} wins!`;
           this.broadcastState();
         }
       }, RECONNECT_GRACE_MS);
 
-    } else if (this.gameState.status === "waiting") {
-      // ONLY free the seat if the game has literally never started yet
-      this.gameState.players = this.gameState.players.filter(p => p.id !== connection.id);
-      this.gameState.message = "Waiting for an opponent to join...";
-      this.broadcastState();
     } else {
-      // game_over state: keep the seat locked so they can reconnect to vote rematch
       this.broadcastState();
     }
   }
@@ -137,7 +112,6 @@ export class CityChainServer extends Server {
     this.gameState.usedKeys = [];
     this.gameState.usedCitiesData = [];
     this.gameState.rematchVotes = [];
-    this.gameState.turnTimeRemaining = null;
 
     Object.values(this.disconnectTimers).forEach(t => clearTimeout(t));
     this.disconnectTimers = {};
@@ -153,22 +127,19 @@ export class CityChainServer extends Server {
     this.startTurnTimer();
   }
 
-  startTurnTimer(isResume = false) {
+  startTurnTimer() {
     if (this.timerId) clearTimeout(this.timerId);
 
     const duration = this.gameState.settings.turnDuration;
+    
+    // Handle Infinite mode safely
     if (duration === -1) {
       this.gameState.turnExpires = null;
       this.broadcastState();
       return;
     }
 
-    let msToRun = duration * 1000;
-    if (isResume && this.gameState.turnTimeRemaining) {
-      msToRun = this.gameState.turnTimeRemaining;
-      this.gameState.turnTimeRemaining = null; // Consume it
-    }
-
+    const msToRun = duration * 1000;
     this.gameState.turnExpires = Date.now() + msToRun;
     this.broadcastState();
 
@@ -186,7 +157,6 @@ export class CityChainServer extends Server {
 
   onMessage(connection, messageString) {
     const data = JSON.parse(messageString);
-
     if (data.action === "ping") return;
 
     if (data.action === "set_name") {
@@ -247,7 +217,12 @@ export class CityChainServer extends Server {
   }
 
   broadcastState() {
-    this.broadcast(JSON.stringify({ type: "state_update", state: this.gameState }));
+    const stateToSend = { ...this.gameState };
+    // Pass the exact relative ms to the client so the UI matches the server perfectly
+    if (stateToSend.turnExpires) {
+      stateToSend.syncRemainingMs = Math.max(0, stateToSend.turnExpires - Date.now());
+    }
+    this.broadcast(JSON.stringify({ type: "state_update", state: stateToSend }));
   }
 
   getFirstLetter(n) { const c = n.replace(/[^a-zA-Z]/g, ''); return c ? c.charAt(0).toLowerCase() : ''; }

@@ -282,9 +282,8 @@
 
           document.getElementById('p1-name').textContent = myPlayer ? myPlayer.name + " (You)" : "Waiting...";
           
-          // FIX: Check disconnectedAt instead of disconnected
           document.getElementById('p2-name').textContent = oppPlayer
-            ? oppPlayer.name + (oppPlayer.disconnectedAt !== null ? " (reconnecting...)" : "")
+            ? oppPlayer.name + (oppPlayer.disconnectedAt !== null ? " (disconnected)" : "")
             : "Waiting...";
 
           if (state.scores) {
@@ -329,17 +328,16 @@
 
           if (state.status === "playing") {
             const isMyTurn = (myPlayerId === state.players[state.currentTurn].id);
-            // Block UI immediately if someone is disconnected 
             const isOpponentGone = oppPlayer && oppPlayer.disconnectedAt !== null;
 
-            document.getElementById('guessInput').disabled = !isMyTurn || isOpponentGone;
-            document.getElementById('guessBtn').disabled = !isMyTurn || isOpponentGone;
+            document.getElementById('guessInput').disabled = !isMyTurn;
+            document.getElementById('guessBtn').disabled = !isMyTurn;
 
             if(isMyTurn) {
-              document.getElementById('guessInput').placeholder = isOpponentGone ? "Game paused..." : "type a city name...";
-              if (!isOpponentGone) document.getElementById('guessInput').focus();
+              document.getElementById('guessInput').placeholder = "type a city name...";
+              document.getElementById('guessInput').focus();
             } else {
-              document.getElementById('guessInput').placeholder = "opponent's turn...";
+              document.getElementById('guessInput').placeholder = isOpponentGone ? "opponent disconnected..." : "opponent's turn...";
             }
 
             document.getElementById('p1-box').className = state.currentTurn === myDisplayIndex ? "stat-box active" : "stat-box";
@@ -349,9 +347,10 @@
             if (state.settings && state.settings.turnDuration === -1) {
               document.getElementById('timerDisplay').innerHTML = '&infin;';
               document.getElementById('timerDisplay').classList.remove('panic');
-            } else if (state.turnExpires) { // Added explicit check for turnExpires
+            } else if (state.syncRemainingMs !== undefined) {
+              const clientTurnExpires = Date.now() + state.syncRemainingMs;
               uiTimerInterval = setInterval(() => {
-                const diff = state.turnExpires - Date.now();
+                const diff = clientTurnExpires - Date.now();
 
                 if (diff <= 0) {
                   document.getElementById('timerDisplay').textContent = "0:00";
