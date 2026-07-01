@@ -22,7 +22,6 @@
   .panel { background: #ffffff; border: 1px solid var(--salmon-light); padding: 1.25rem 1.5rem; margin-bottom: 1rem; position: relative; }
 
   .stat-row { display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 1rem; font-size: 0.85rem; }
-  /* Added flex: 1 1 0 and min-width: 0 to force exact 33.3% equal widths for precise centering */
   .stat-box { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0.5rem; border-radius: 6px; border: 1px solid transparent; transition: 0.2s; flex: 1 1 0; min-width: 0; }
   .stat-box.active { background: var(--salmon-light); border: 1px solid var(--salmon-dark); }
 
@@ -57,7 +56,6 @@
   .invite-banner { background: var(--cream); border: 1px dashed var(--salmon-dark); padding: 0.8rem; text-align: center; margin-bottom: 1rem; }
   .invite-banner input { width: 100%; text-align: center; border: none; background: transparent; font-weight: bold; color: var(--salmon-dark); cursor: pointer; padding: 0; outline: none; font-size: 0.85rem; transition: color 0.2s;}
 
-  /* Overlay Modal for Invites */
   #nameOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 248, 245, 0.85); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; }
   .name-box { background: #fff; padding: 2rem; border: 2px solid var(--salmon-dark); text-align: center; width: 90%; max-width: 320px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
   .name-box h2 { margin: 0 0 1rem 0; color: var(--salmon-dark); font-size: 1.2rem; }
@@ -144,8 +142,6 @@
       localStorage.setItem('cityChainLifetimeGuessed', JSON.stringify(Array.from(fresh)));
     }
 
-    // Stable per-browser identity so a dropped connection can resume its
-    // same seat instead of being treated as a brand new player.
     function getOrCreatePlayerToken() {
       let token = localStorage.getItem('cityChainPlayerToken');
       if (!token) {
@@ -160,8 +156,7 @@
     const roomId = urlParams.get('room');
     let playerName = urlParams.get('name');
 
-    // Parse the settings object passed from the lobby
-    let parsedSettings = { turnDuration: 15 }; // Fallback
+    let parsedSettings = { turnDuration: 15 };
     const settingsParam = urlParams.get('settings');
     if (settingsParam) {
       try { parsedSettings = JSON.parse(decodeURIComponent(settingsParam)); } catch(e) {}
@@ -230,7 +225,7 @@
       socket.onclose = (event) => {
         clearInterval(heartbeatInterval);
 
-        if (roomFull) return; // already showing a terminal state, don't retry
+        if (roomFull) return;
 
         if (event.code === 4001) {
           roomFull = true;
@@ -254,8 +249,6 @@
           return;
         }
 
-        // Unexpected drop mid-session: try to reconnect for a little while.
-        // The server holds this seat open for a grace period before giving up.
         document.getElementById('turnStatus').textContent = "Connection lost. Reconnecting...";
         if (reconnectAttempts < 12) {
           reconnectAttempts++;
@@ -288,8 +281,10 @@
           const oppPlayer = state.players[oppDisplayIndex];
 
           document.getElementById('p1-name').textContent = myPlayer ? myPlayer.name + " (You)" : "Waiting...";
+          
+          // FIX: Check disconnectedAt instead of disconnected
           document.getElementById('p2-name').textContent = oppPlayer
-            ? oppPlayer.name + (oppPlayer.disconnected ? " (reconnecting...)" : "")
+            ? oppPlayer.name + (oppPlayer.disconnectedAt !== null ? " (reconnecting...)" : "")
             : "Waiting...";
 
           if (state.scores) {
@@ -334,12 +329,15 @@
 
           if (state.status === "playing") {
             const isMyTurn = (myPlayerId === state.players[state.currentTurn].id);
-            document.getElementById('guessInput').disabled = !isMyTurn;
-            document.getElementById('guessBtn').disabled = !isMyTurn;
+            // Block UI immediately if someone is disconnected 
+            const isOpponentGone = oppPlayer && oppPlayer.disconnectedAt !== null;
+
+            document.getElementById('guessInput').disabled = !isMyTurn || isOpponentGone;
+            document.getElementById('guessBtn').disabled = !isMyTurn || isOpponentGone;
 
             if(isMyTurn) {
-              document.getElementById('guessInput').placeholder = "type a city name...";
-              document.getElementById('guessInput').focus();
+              document.getElementById('guessInput').placeholder = isOpponentGone ? "Game paused..." : "type a city name...";
+              if (!isOpponentGone) document.getElementById('guessInput').focus();
             } else {
               document.getElementById('guessInput').placeholder = "opponent's turn...";
             }
@@ -347,12 +345,11 @@
             document.getElementById('p1-box').className = state.currentTurn === myDisplayIndex ? "stat-box active" : "stat-box";
             document.getElementById('p2-box').className = state.currentTurn === oppDisplayIndex ? "stat-box active" : "stat-box";
 
-            // Handle the visual MM:SS or SS:ms timer updates at ~60fps
             clearInterval(uiTimerInterval);
             if (state.settings && state.settings.turnDuration === -1) {
               document.getElementById('timerDisplay').innerHTML = '&infin;';
               document.getElementById('timerDisplay').classList.remove('panic');
-            } else {
+            } else if (state.turnExpires) { // Added explicit check for turnExpires
               uiTimerInterval = setInterval(() => {
                 const diff = state.turnExpires - Date.now();
 
@@ -364,16 +361,11 @@
 
                 const m = Math.floor(diff / 60000);
                 const s = Math.floor((diff % 60000) / 1000);
-                const ms = Math.floor((diff % 1000) / 10); // 2 digit centiseconds
+                const ms = Math.floor((diff % 1000) / 10);
 
                 let formatted;
-                if (m > 0) {
-                  // If 1 minute or more remains, show M:SS
-                  formatted = m + ':' + String(s).padStart(2, '0');
-                } else {
-                  // If under a minute, show S:ms
-                  formatted = s + ':' + String(ms).padStart(2, '0');
-                }
+                if (m > 0) formatted = m + ':' + String(s).padStart(2, '0');
+                else formatted = s + ':' + String(ms).padStart(2, '0');
 
                 document.getElementById('timerDisplay').textContent = formatted;
 

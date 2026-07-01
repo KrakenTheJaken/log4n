@@ -1,4 +1,4 @@
-import { Server, routePartykitRequest } from "partyserver";
+import { Server } from "partyserver";
 import { CITIES_DATA } from "./data.js";
 
 const cityIndex = new Map();
@@ -8,7 +8,7 @@ CITIES_DATA.forEach(entry => {
   cityIndex.get(key).push(entry);
 });
 
-const RECONNECT_GRACE_MS = 20000; // how long a dropped player's seat stays reserved
+const RECONNECT_GRACE_MS = 20000; // 20 seconds
 
 export class CityChainServer extends Server {
   constructor(ctx, env) {
@@ -23,28 +23,26 @@ export class CityChainServer extends Server {
       currentCityEntry: null,
       requiredLetter: null,
       turnExpires: null,
+      turnTimeRemaining: null, // Tracks time left on pause
       winner: null,
       rematchVotes: [],
       message: "Waiting for opponent to join...",
-      settings: null // Locked in when first player connects
+      settings: null 
     };
     this.timerId = null;
     this.lastLoserIndex = null;
-    this.disconnectTimers = {}; // token -> setTimeout handle
+    this.disconnectTimers = {}; 
   }
 
   onConnect(connection, ctx) {
     const url = new URL(ctx.request.url);
     const token = url.searchParams.get('token');
 
-    // Reconnect case: this token already has a seat in this room.
     const existingPlayer = token ? this.gameState.players.find(p => p.token === token) : null;
+    
     if (existingPlayer) {
-      // Only allow a token to "reclaim" a seat that's actually marked as
-      // disconnected. A seat that's still live should never be silently
-      // taken over by a second connection presenting the same token.
-      const seatIsOpen = existingPlayer.disconnectedAt !== null || this.gameState.status !== "playing";
-      if (!seatIsOpen) {
+      // Reject if the seat is currently actively connected elsewhere
+      if (existingPlayer.disconnectedAt === null) {
         connection.send(JSON.stringify({ type: "error", message: "That seat is already connected elsewhere." }));
         connection.close(4002, "Seat already active");
         return;
@@ -63,10 +61,9 @@ export class CityChainServer extends Server {
 
       if (this.gameState.status === "playing") {
         this.gameState.message = `${existingPlayer.name} reconnected!`;
-        // If the turn timer was paused because it was their turn when they
-        // dropped, resume it now instead of leaving it stopped forever.
+        // Resume turn timer with saved remaining time
         if (this.gameState.currentTurn === reconnectIndex && !this.timerId) {
-          this.startTurnTimer(); // this also broadcasts state
+          this.startTurnTimer(true); 
           return;
         }
       }
@@ -74,7 +71,7 @@ export class CityChainServer extends Server {
       return;
     }
 
-    // Not a known seat — room only ever holds 2 seats, reserved or not.
+    // Lock the room to exactly 2 slots permanently 
     if (this.gameState.players.length >= 2) {
       connection.send(JSON.stringify({ type: "error", message: "Room is full!" }));
       connection.close(4001, "Room full");
@@ -91,20 +88,17 @@ export class CityChainServer extends Server {
     this.gameState.rematchVotes = this.gameState.rematchVotes.filter(id => id !== connection.id);
     if (!player) return;
 
+    player.disconnectedAt = Date.now();
+
     if (this.gameState.status === "playing") {
       const leavingIndex = this.gameState.players.indexOf(player);
-
-      // Don't end the game immediately — hold the seat open for a grace period
-      // in case this was a network blip rather than a real departure.
-      player.disconnectedAt = Date.now();
       this.gameState.message = `${player.name} disconnected. Waiting for them to reconnect...`;
 
-      // If it was their turn, pause the turn timer instead of letting it
-      // keep ticking — otherwise a mid-turn disconnect can end the game
-      // via the ordinary time-out path before the grace period even matters.
+      // Pause timer and save remaining time so they can't exploit refreshes
       if (this.gameState.currentTurn === leavingIndex && this.timerId) {
         clearTimeout(this.timerId);
         this.timerId = null;
+        this.gameState.turnTimeRemaining = Math.max(0, this.gameState.turnExpires - Date.now());
         this.gameState.turnExpires = null;
       }
 
@@ -125,14 +119,14 @@ export class CityChainServer extends Server {
           this.broadcastState();
         }
       }, RECONNECT_GRACE_MS);
-    } else {
-      // No active game (still in the lobby, or a previous round already
-      // ended) — free the seat immediately instead of leaving it locked
-      // for a connection that's never coming back.
+
+    } else if (this.gameState.status === "waiting") {
+      // ONLY free the seat if the game has literally never started yet
       this.gameState.players = this.gameState.players.filter(p => p.id !== connection.id);
-      if (this.gameState.status === "waiting") {
-        this.gameState.message = "Waiting for an opponent to join...";
-      }
+      this.gameState.message = "Waiting for an opponent to join...";
+      this.broadcastState();
+    } else {
+      // game_over state: keep the seat locked so they can reconnect to vote rematch
       this.broadcastState();
     }
   }
@@ -143,8 +137,8 @@ export class CityChainServer extends Server {
     this.gameState.usedKeys = [];
     this.gameState.usedCitiesData = [];
     this.gameState.rematchVotes = [];
+    this.gameState.turnTimeRemaining = null;
 
-    // Clear any stale disconnect grace timers from a previous round.
     Object.values(this.disconnectTimers).forEach(t => clearTimeout(t));
     this.disconnectTimers = {};
     this.gameState.players.forEach(p => { p.disconnectedAt = null; });
@@ -159,19 +153,23 @@ export class CityChainServer extends Server {
     this.startTurnTimer();
   }
 
-  startTurnTimer() {
+  startTurnTimer(isResume = false) {
     if (this.timerId) clearTimeout(this.timerId);
 
     const duration = this.gameState.settings.turnDuration;
-
-    // Handle Infinite Timer
     if (duration === -1) {
       this.gameState.turnExpires = null;
       this.broadcastState();
       return;
     }
 
-    this.gameState.turnExpires = Date.now() + (duration * 1000);
+    let msToRun = duration * 1000;
+    if (isResume && this.gameState.turnTimeRemaining) {
+      msToRun = this.gameState.turnTimeRemaining;
+      this.gameState.turnTimeRemaining = null; // Consume it
+    }
+
+    this.gameState.turnExpires = Date.now() + msToRun;
     this.broadcastState();
 
     this.timerId = setTimeout(() => {
@@ -183,13 +181,13 @@ export class CityChainServer extends Server {
       const winner = this.gameState.players[winningIndex]?.name || "Opponent";
       this.gameState.message = `Time's up! ${winner} wins!`;
       this.broadcastState();
-    }, duration * 1000);
+    }, msToRun);
   }
 
   onMessage(connection, messageString) {
     const data = JSON.parse(messageString);
 
-    if (data.action === "ping") return; // heartbeat keepalive, no-op
+    if (data.action === "ping") return;
 
     if (data.action === "set_name") {
       const player = this.gameState.players.find(p => p.id === connection.id);
@@ -197,7 +195,6 @@ export class CityChainServer extends Server {
         player.name = data.name.substring(0, 15).trim();
         player.isReady = true;
 
-        // Initialize settings from the first connected player
         if (!this.gameState.settings) {
           this.gameState.settings = {
             turnDuration: data.settings?.turnDuration !== undefined ? data.settings.turnDuration : 15
