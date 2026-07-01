@@ -40,6 +40,17 @@ export class CityChainServer extends Server {
     // Reconnect case: this token already has a seat in this room.
     const existingPlayer = token ? this.gameState.players.find(p => p.token === token) : null;
     if (existingPlayer) {
+      // Only allow a token to "reclaim" a seat that's actually marked as
+      // disconnected. A seat that's still live should never be silently
+      // taken over by a second connection presenting the same token.
+      const seatIsOpen = existingPlayer.disconnectedAt !== null || this.gameState.status !== "playing";
+      if (!seatIsOpen) {
+        connection.send(JSON.stringify({ type: "error", message: "That seat is already connected elsewhere." }));
+        connection.close(4002, "Seat already active");
+        return;
+      }
+
+      const reconnectIndex = this.gameState.players.indexOf(existingPlayer);
       existingPlayer.id = connection.id;
       existingPlayer.disconnectedAt = null;
 
@@ -49,8 +60,15 @@ export class CityChainServer extends Server {
       }
 
       connection.send(JSON.stringify({ type: "welcome", playerId: connection.id }));
+
       if (this.gameState.status === "playing") {
         this.gameState.message = `${existingPlayer.name} reconnected!`;
+        // If the turn timer was paused because it was their turn when they
+        // dropped, resume it now instead of leaving it stopped forever.
+        if (this.gameState.currentTurn === reconnectIndex && !this.timerId) {
+          this.startTurnTimer(); // this also broadcasts state
+          return;
+        }
       }
       this.broadcastState();
       return;
@@ -74,10 +92,22 @@ export class CityChainServer extends Server {
     if (!player) return;
 
     if (this.gameState.status === "playing") {
+      const leavingIndex = this.gameState.players.indexOf(player);
+
       // Don't end the game immediately — hold the seat open for a grace period
       // in case this was a network blip rather than a real departure.
       player.disconnectedAt = Date.now();
       this.gameState.message = `${player.name} disconnected. Waiting for them to reconnect...`;
+
+      // If it was their turn, pause the turn timer instead of letting it
+      // keep ticking — otherwise a mid-turn disconnect can end the game
+      // via the ordinary time-out path before the grace period even matters.
+      if (this.gameState.currentTurn === leavingIndex && this.timerId) {
+        clearTimeout(this.timerId);
+        this.timerId = null;
+        this.gameState.turnExpires = null;
+      }
+
       this.broadcastState();
 
       const token = player.token;
@@ -85,20 +115,24 @@ export class CityChainServer extends Server {
         delete this.disconnectTimers[token];
         const stillGone = this.gameState.players.find(p => p.token === token);
         if (stillGone && stillGone.disconnectedAt && this.gameState.status === "playing") {
-          const leavingIndex = this.gameState.players.indexOf(stillGone);
-          const winningIndex = leavingIndex === 0 ? 1 : 0;
+          const leavingIdx = this.gameState.players.indexOf(stillGone);
+          const winningIndex = leavingIdx === 0 ? 1 : 0;
           this.gameState.scores[winningIndex]++;
-          this.lastLoserIndex = leavingIndex;
+          this.lastLoserIndex = leavingIdx;
           this.gameState.status = "game_over";
           const winnerName = this.gameState.players[winningIndex]?.name || "Opponent";
           this.gameState.message = `${stillGone.name} didn't reconnect in time. ${winnerName} wins!`;
           this.broadcastState();
         }
       }, RECONNECT_GRACE_MS);
-    } else if (this.gameState.status === "waiting") {
-      // No game in progress yet, free up the seat immediately.
+    } else {
+      // No active game (still in the lobby, or a previous round already
+      // ended) — free the seat immediately instead of leaving it locked
+      // for a connection that's never coming back.
       this.gameState.players = this.gameState.players.filter(p => p.id !== connection.id);
-      this.gameState.message = "Waiting for an opponent to join...";
+      if (this.gameState.status === "waiting") {
+        this.gameState.message = "Waiting for an opponent to join...";
+      }
       this.broadcastState();
     }
   }

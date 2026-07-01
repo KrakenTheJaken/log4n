@@ -230,7 +230,7 @@
       socket.onclose = (event) => {
         clearInterval(heartbeatInterval);
 
-        if (roomFull) return; // already showing the "room full" state, don't retry
+        if (roomFull) return; // already showing a terminal state, don't retry
 
         if (event.code === 4001) {
           roomFull = true;
@@ -242,6 +242,15 @@
           document.getElementById('guessBtn').disabled = true;
           document.getElementById('inviteBanner').style.display = 'none';
           showMessage("This room is full — it's a private match between two other players.", "bad");
+          return;
+        }
+
+        if (event.code === 4002) {
+          roomFull = true;
+          document.getElementById('turnStatus').textContent = "Already connected in another tab.";
+          document.getElementById('guessInput').disabled = true;
+          document.getElementById('guessBtn').disabled = true;
+          showMessage("This seat is already connected from another tab or device.", "bad");
           return;
         }
 
