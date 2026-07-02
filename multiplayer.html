@@ -196,9 +196,22 @@
     let myPlayerId = null;
     let originalMyIndex = null; 
     let uiTimerInterval = null;
+    let pingInterval = null; // Add this variable
 
     socket.onopen = () => {
       if (playerName) socket.send(JSON.stringify({ action: "set_name", name: playerName, settings: parsedSettings }));
+      
+      // Start the heartbeat to prevent idle disconnects
+      pingInterval = setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ action: "ping" }));
+        }
+      }, 20000); // Send a ping every 20 seconds
+    };
+
+    // Clear the interval if the socket closes so we don't leak memory
+    socket.onclose = () => {
+      if (pingInterval) clearInterval(pingInterval);
     };
 
     const ISO_OVERRIDES = { 'XW': 'PS', 'XG': 'PS', 'XR': 'SJ' };

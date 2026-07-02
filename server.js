@@ -104,9 +104,14 @@ export class CityChainServer extends Server {
     }, duration * 1000);
   }
 
-  onMessage(connection, messageString) {
+onMessage(connection, messageString) {
     const data = JSON.parse(messageString);
 
+    // Intercept ping and keep the connection alive
+    if (data.action === "ping") {
+      connection.send(JSON.stringify({ type: "pong" }));
+      return;
+    }
     if (data.action === "set_name") {
       const player = this.gameState.players.find(p => p.id === connection.id);
       if (player && data.name) {
