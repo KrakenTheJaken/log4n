@@ -77,6 +77,22 @@ export class CityChainServer extends Server {
     this.startTurnTimer();
   }
 
+  // Centralized time-up logic to end the game reliably
+  handleTimeUp() {
+    if (this.gameState.status !== "playing") return;
+    
+    if (this.timerId) clearTimeout(this.timerId);
+    
+    this.gameState.status = "game_over";
+    const losingIndex = this.gameState.currentTurn;
+    const winningIndex = losingIndex === 0 ? 1 : 0;
+    this.gameState.scores[winningIndex]++;
+    this.lastLoserIndex = losingIndex;
+    const winner = this.gameState.players[winningIndex]?.name || "Opponent";
+    this.gameState.message = `Time's up! ${winner} wins!`;
+    this.broadcastState();
+  }
+
   startTurnTimer() {
     if (this.timerId) clearTimeout(this.timerId);
     
@@ -92,19 +108,11 @@ export class CityChainServer extends Server {
     this.gameState.turnExpires = Date.now() + (duration * 1000);
     this.broadcastState();
     
-    this.timerId = setTimeout(() => {
-      this.gameState.status = "game_over";
-      const losingIndex = this.gameState.currentTurn;
-      const winningIndex = losingIndex === 0 ? 1 : 0;
-      this.gameState.scores[winningIndex]++;
-      this.lastLoserIndex = losingIndex;
-      const winner = this.gameState.players[winningIndex]?.name || "Opponent";
-      this.gameState.message = `Time's up! ${winner} wins!`;
-      this.broadcastState();
-    }, duration * 1000);
+    // Server backup timer
+    this.timerId = setTimeout(() => this.handleTimeUp(), duration * 1000);
   }
 
-onMessage(connection, messageString) {
+  onMessage(connection, messageString) {
     const data = JSON.parse(messageString);
 
     // Intercept ping and keep the connection alive
@@ -112,6 +120,15 @@ onMessage(connection, messageString) {
       connection.send(JSON.stringify({ type: "pong" }));
       return;
     }
+
+    // Client acts as a fail-safe to force the game over if the server slept
+    if (data.action === "time_up" && this.gameState.status === "playing") {
+      if (this.gameState.turnExpires && Date.now() >= this.gameState.turnExpires) {
+        this.handleTimeUp();
+      }
+      return;
+    }
+
     if (data.action === "set_name") {
       const player = this.gameState.players.find(p => p.id === connection.id);
       if (player && data.name) {
@@ -137,6 +154,11 @@ onMessage(connection, messageString) {
     if (data.action === "guess" && this.gameState.status === "playing") {
       const activePlayer = this.gameState.players[this.gameState.currentTurn];
       if (!activePlayer || connection.id !== activePlayer.id) return;
+
+      // Reject guesses if the client timer desynced
+      if (this.gameState.turnExpires && Date.now() > this.gameState.turnExpires) {
+         return; 
+      }
 
       const guessKey = data.city.trim().toLowerCase();
       if (this.getFirstLetter(guessKey) !== this.gameState.requiredLetter) {
