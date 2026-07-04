@@ -330,8 +330,13 @@
     let myConsumed = { country: 0, letters: 0, freefill: 0 };
     let myFreefillArmed = false;
 
+    // Server-confirmed settings only. Do NOT fall back to the client's locally-parsed
+    // URL settings here — only the room creator's settings are authoritative, and every
+    // other player's local parsedSettings is just a guess until the server confirms it.
+    let serverSettings = null;
+
     function lifelineEarned(key) {
-      const interval = parsedSettings.lifelineIntervals[key];
+      const interval = serverSettings.lifelineIntervals[key];
       return Math.floor(myScore / interval) + 1;
     }
     function lifelineAvailable(key) {
@@ -339,14 +344,22 @@
     }
 
     function renderLifelines(isMyTurn, roundOver) {
+      // Guard: never render lifeline availability from guessed/default settings.
+      // Until the server has told us what's actually enabled for this room, keep
+      // every lifeline hidden rather than risk showing ones that are turned off.
+      if (!serverSettings) {
+        LIFELINE_KEYS.forEach(key => lifelineEls[key].row.classList.add('hidden'));
+        return;
+      }
+
       LIFELINE_KEYS.forEach(key => {
         const els = lifelineEls[key];
-        const enabled = parsedSettings.lifelinesEnabled[key];
+        const enabled = serverSettings.lifelinesEnabled[key];
         els.row.classList.toggle('hidden', !enabled);
         if (!enabled) return;
 
         const available = lifelineAvailable(key);
-        const interval = parsedSettings.lifelineIntervals[key];
+        const interval = serverSettings.lifelineIntervals[key];
 
         if (available <= 0) {
           const guessesUntil = interval - (myScore % interval);
@@ -355,7 +368,7 @@
           els.uses.textContent = '(' + available + ' left)';
         }
 
-        const canUse = available > 0 && isMyTurn && !roundOver;
+        const canUse = available > 0 && !roundOver;
         els.btn.disabled = !canUse && !(key === 'freefill' && myFreefillArmed);
         if (els.row) els.row.classList.toggle('armed', key === 'freefill' && myFreefillArmed);
 
@@ -391,7 +404,7 @@
       const data = JSON.parse(event.data);
 
       if (data.type === "welcome") myPlayerId = data.playerId;
-      if (data.type === "guess_success") recordLifetimeGuess(data.key);
+      if (data.type === "guess_success") { recordLifetimeGuess(data.key); clearLifelineResults(); }
       if (data.type === "error") showMessage(data.message, "bad");
 
       if (data.type === "lifeline_result") {
@@ -437,11 +450,11 @@
           myFreefillArmed = !!mine.freefillArmed;
         }
 
-        if (state.settings && state.settings.lifelinesEnabled) {
-          parsedSettings.lifelinesEnabled = state.settings.lifelinesEnabled;
-        }
-        if (state.settings && state.settings.lifelineIntervals) {
-          parsedSettings.lifelineIntervals = state.settings.lifelineIntervals;
+        if (state.settings && state.settings.lifelinesEnabled && state.settings.lifelineIntervals) {
+          serverSettings = {
+            lifelinesEnabled: state.settings.lifelinesEnabled,
+            lifelineIntervals: state.settings.lifelineIntervals
+          };
         }
 
         if (state.status === "playing") {
