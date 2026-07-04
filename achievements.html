@@ -285,6 +285,19 @@
     <div class="result-panel" id="countryResult"></div>
     <p class="caveat">note: a few cities share the exact same name, only the most populous one will count. "Gaza Strip" and "West Bank" are combined here as Palestine.</p>
   </div>
+
+  <div class="panel">
+    <h2>subdivision checklists</h2>
+    <p class="desc">the biggest city in every subdivision (state/province) of a country. type a country to see your map coverage.</p>
+    <div class="search-row">
+      <div class="country-combo" id="subdivCombo">
+        <input type="text" id="subdivSearch" placeholder="type a country, e.g. United States" autocomplete="off">
+        <div class="country-dropdown" id="subdivDropdown"></div>
+      </div>
+    </div>
+    <div class="result-panel" id="subdivResult"></div>
+    <p class="caveat">note: subdivisions with missing data in the dataset will be grouped under "unknown subdivision".</p>
+  </div>
 </main>
 
 <script src="cities.js"></script>
@@ -373,18 +386,25 @@
   buildMilestoneGrid(document.getElementById('lifetimeMilestones'), [50, 100, 250, 500, 1000, 2500], lifetimeGuessed.size, ' cities');
   buildMilestoneGrid(document.getElementById('infiniteMilestones'), [10, 25, 50, 100, 200, 500], highScoreInfinite, ' streak');
   buildMilestoneGrid(document.getElementById('sprintMilestones'), [10, 20, 30, 50, 75, 100], highScoreTimed, ' in 5 min');
-
   function renderListEntry(city, i, found) {
     const entry = document.createElement('div');
     entry.className = 'tier-entry' + (found ? '' : ' unfound');
+    
+    let displayName = '?????';
+    if (found) {
+      displayName = city.c + ', ' + city.co;
+    } else if (city.isSubdiv) {
+      // Shows "?????, Utah" if the city hasn't been guessed yet
+      displayName = '?????, ' + city.co;
+    }
+
     entry.innerHTML =
       '<span class="rank">#' + (i + 1) + '</span>' +
       '<span class="flag">' + isoToFlag(city.iso) + '</span>' +
-      '<span class="name">' + (found ? city.c + ', ' + city.co : '?????') + '</span>' +
+      '<span class="name">' + displayName + '</span>' +
       '<span class="pop">' + (city.p ? city.p.toLocaleString() : 'unknown') + '</span>';
     return entry;
   }
-
   // ---------------------------------------------------------------------
   // Shared rendering for a "tier list" result: a header with found/total
   // progress plus the list of cities (found ones named, others hidden).
@@ -538,6 +558,8 @@
     countryDropdown.innerHTML = '';
     activeOptionIndex = -1;
 
+
+
     if (matches.length === 0) {
       const none = document.createElement('div');
       none.className = 'no-match';
@@ -546,16 +568,22 @@
       return;
     }
 
+
+
     matches.forEach(name => {
       const group = countryGroups.get(name);
-      const found = countryFoundCount(name);
+      const n = Math.min(group.cities.length, 100)
+      const topN = group.cities.slice(0, n);
+       // const found = countryFoundCount(name);
+      const foundCount = topN.filter(c => lifetimeGuessed.has(c.a.toLowerCase().trim())).length;
+
       const opt = document.createElement('div');
       opt.className = 'country-option';
       opt.dataset.name = name;
       opt.innerHTML =
         '<span class="flag">' + isoToFlag(group.iso) + '</span>' +
         '<span class="opt-name">' + name + '</span>' +
-        '<span class="opt-progress">' + found + '/' + Math.min(group.cities.length, 100) + '</span>';
+        '<span class="opt-progress">' + foundCount + '/' + Math.min(group.cities.length, 100) + '</span>'; 
       opt.addEventListener('mousedown', (e) => {
         // mousedown (not click) so this fires before the input's blur handler closes the dropdown
         e.preventDefault();
@@ -639,6 +667,148 @@
   countrySearch.value = selectedCountry;
   countryTierSelect.addEventListener('change', renderCountryResult);
   renderCountryResult();
+
+
+  // --- Subdivision Checklists ---
+  const subdivSearch = document.getElementById('subdivSearch');
+  const subdivCombo = document.getElementById('subdivCombo');
+  const subdivDropdown = document.getElementById('subdivDropdown');
+  const subdivResult = document.getElementById('subdivResult');
+
+  let selectedSubdivCountry = countryNames[0];
+  let subdivActiveIndex = -1;
+
+  function renderSubdivDropdown(filterText) {
+    const v = (filterText || '').trim().toLowerCase();
+    const matches = v ? countryNames.filter(name => name.toLowerCase().includes(v)) : countryNames;
+
+    subdivDropdown.innerHTML = '';
+    subdivActiveIndex = -1;
+
+    if (matches.length === 0) {
+      const none = document.createElement('div');
+      none.className = 'no-match';
+      none.textContent = 'no countries match "' + filterText + '"';
+      subdivDropdown.appendChild(none);
+      return;
+    }
+
+    matches.forEach(name => {
+      const group = countryGroups.get(name);
+      
+      // Calculate progress specifically for this country's subdivisions
+      const subdivs = new Map();
+      group.cities.forEach(c => {
+        const adminName = c.admin ? c.admin.trim() : 'unknown';
+        if (!subdivs.has(adminName)) subdivs.set(adminName, []);
+        subdivs.get(adminName).push(c);
+      });
+      
+      let foundSubdivs = 0;
+      subdivs.forEach(cities => {
+        // Check if the biggest city in this subdivision has been found
+        if (lifetimeGuessed.has(cities[0].a.toLowerCase().trim())) foundSubdivs++;
+      });
+
+      const opt = document.createElement('div');
+      opt.className = 'country-option';
+      opt.dataset.name = name;
+      opt.innerHTML =
+        '<span class="flag">' + isoToFlag(group.iso) + '</span>' +
+        '<span class="opt-name">' + name + '</span>' +
+        '<span class="opt-progress">' + foundSubdivs + '/' + subdivs.size + '</span>';
+      
+      opt.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        chooseSubdivCountry(name);
+      });
+      subdivDropdown.appendChild(opt);
+    });
+  }
+  function openSubdivDropdown() {
+    renderSubdivDropdown(subdivSearch.value);
+    subdivDropdown.classList.add('open');
+  }
+
+  function closeSubdivDropdown() {
+    subdivDropdown.classList.remove('open');
+  }
+
+  function chooseSubdivCountry(name) {
+    selectedSubdivCountry = name;
+    subdivSearch.value = name;
+    closeSubdivDropdown();
+    renderSubdivResult();
+  }
+
+  function setSubdivActiveOption(index) {
+    const options = Array.from(subdivDropdown.querySelectorAll('.country-option'));
+    options.forEach(el => el.classList.remove('active'));
+    if (options[index]) {
+      options[index].classList.add('active');
+      options[index].scrollIntoView({ block: 'nearest' });
+    }
+    subdivActiveIndex = index;
+  }
+
+  subdivSearch.addEventListener('focus', function() {
+    this.select();
+    openSubdivDropdown();
+  });
+  subdivSearch.addEventListener('input', openSubdivDropdown);
+  subdivSearch.addEventListener('blur', () => setTimeout(closeSubdivDropdown, 100));
+
+  subdivSearch.addEventListener('keydown', (e) => {
+    const options = Array.from(subdivDropdown.querySelectorAll('.country-option'));
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!subdivDropdown.classList.contains('open')) { openSubdivDropdown(); return; }
+      setSubdivActiveOption(Math.min(subdivActiveIndex + 1, options.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSubdivActiveOption(Math.max(subdivActiveIndex - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (subdivActiveIndex >= 0 && options[subdivActiveIndex]) {
+        chooseSubdivCountry(options[subdivActiveIndex].dataset.name);
+      } else if (options.length > 0) {
+        chooseSubdivCountry(options[0].dataset.name);
+      }
+    } else if (e.key === 'Escape') {
+      closeSubdivDropdown();
+    }
+  });
+
+  function renderSubdivResult() {
+    const group = countryGroups.get(selectedSubdivCountry);
+    if (!group) return;
+
+    const subdivs = new Map();
+    group.cities.forEach(c => {
+      const adminName = c.admin ? c.admin.trim() : 'unknown';
+      if (!subdivs.has(adminName)) {
+        subdivs.set(adminName, []);
+      }
+      subdivs.get(adminName).push(c);
+    });
+
+    const topCities = [];
+    subdivs.forEach((cities, adminName) => {
+      topCities.push({
+        ...cities[0],
+        co: adminName === 'unknown' ? 'unknown subdivision' : adminName,
+        isSubdiv: true // Tells renderListEntry to show the admin name if unfound
+      });
+    });
+
+    // Sort by population (most to least)
+    topCities.sort((a, b) => b.p - a.p);
+
+    const flag = isoToFlag(group.iso);
+    renderResult(subdivResult, flag + ' ' + selectedSubdivCountry + ' subdivisions', topCities);
+  }
+  subdivSearch.value = selectedSubdivCountry;
+  renderSubdivResult();
 </script>
 
 </body>

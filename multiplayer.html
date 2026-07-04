@@ -342,7 +342,6 @@
     function lifelineAvailable(key) {
       return lifelineEarned(key) - myConsumed[key];
     }
-
     function renderLifelines(isMyTurn, roundOver) {
       // Guard: never render lifeline availability from guessed/default settings.
       // Until the server has told us what's actually enabled for this room, keep
@@ -368,15 +367,16 @@
           els.uses.textContent = '(' + available + ' left)';
         }
 
-        const canUse = available > 0 && !roundOver;
+        // FIX: Added `&& isMyTurn` so the button locks when the opponent is guessing
+        const canUse = available > 0 && !roundOver && isMyTurn;
         els.btn.disabled = !canUse && !(key === 'freefill' && myFreefillArmed);
+        
         if (els.row) els.row.classList.toggle('armed', key === 'freefill' && myFreefillArmed);
 
         const percent = (myScore % interval) / interval * 100;
         els.btn.style.setProperty('--progress', percent + '%');
       });
     }
-
     function clearLifelineResults() {
       LIFELINE_KEYS.forEach(key => { lifelineEls[key].result.textContent = ''; });
     }
