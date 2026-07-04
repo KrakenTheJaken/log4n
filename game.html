@@ -186,6 +186,87 @@
     from { opacity: 1; transform: translateY(0); }
     to { opacity: 0; transform: translateY(8px); }
   }
+
+  .settings-block {
+    width: 100%;
+    max-width: 280px;
+    background: var(--cream);
+    border: 1px solid var(--salmon-light);
+    padding: 0.75rem;
+    text-align: left;
+  }
+  .settings-block + .settings-block { margin-top: 0.5rem; }
+  .settings-title {
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: var(--salmon-dark);
+  }
+  .lifeline-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px dotted var(--salmon-light);
+  }
+  .lifeline-setting-row:last-child { border-bottom: none; }
+  .lifeline-setting-label {
+    font-size: 0.8rem;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .lifeline-setting-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .lifeline-setting-controls input[type="number"] {
+    width: 60px;
+    flex: none;
+    padding: 0.25rem 0.35rem;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+  .lifeline-setting-controls span {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    white-space: nowrap;
+  }
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 18px;
+    flex: none;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--salmon-light);
+    transition: 0.2s;
+    border-radius: 18px;
+  }
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.2s;
+    border-radius: 50%;
+  }
+  .toggle-switch input:checked + .toggle-slider { background-color: #4a7a3d; }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(16px); }
+  .lifeline-setting-row.disabled .lifeline-setting-label { opacity: 0.5; }
+  .lifeline-setting-row.disabled input[type="number"] { opacity: 0.5; }
+
 </style>
 </head>
 <body>
@@ -277,13 +358,62 @@
       <form id="lobbyForm" style="display: flex; flex-direction: column; gap: 0.75rem; align-items: center; margin-bottom: 1rem;">
         <input type="text" id="playerNameInput" placeholder="Your Name (e.g. Trevor Moore)" required style="width: 100%; max-width: 280px; text-align: center;" />
         
-        <div style="width: 100%; max-width: 280px; background: var(--cream); border: 1px solid var(--salmon-light); padding: 0.75rem; text-align: left;">
-          <div style="font-size: 0.75rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--salmon-dark);">Room Settings</div>
+        <div class="settings-block">
+          <div class="settings-title">Room Settings</div>
           
           <label style="display: block; font-size: 0.8rem; margin-bottom: 0.25rem;">Round Timer (seconds)</label>
           <div style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem;">
-             <input type="number" id="customTimerInput" value="15" placeholder="-1 for &infin;" style="width: 100%; padding: 0.3rem; border: 1px solid var(--salmon-light); text-align: center;" />
+             <input type="number" id="customTimerInput" value="15" min="1" step="1" placeholder="seconds" style="width: 100%; padding: 0.3rem; border: 1px solid var(--salmon-light); text-align: center;" />
           </div>
+          <div id="timerValidationMsg" style="font-size: 0.7rem; color: var(--salmon-dark); min-height: 1em;"></div>
+        </div>
+
+        <div class="settings-block">
+          <div class="settings-title">Lifelines</div>
+
+          <div class="lifeline-setting-row" id="lifelineSettingRow-country">
+            <div class="lifeline-setting-label">
+              <label class="toggle-switch">
+                <input type="checkbox" id="lifelineEnabled-country" checked>
+                <span class="toggle-slider"></span>
+              </label>
+              <span>next country</span>
+            </div>
+            <div class="lifeline-setting-controls">
+              <input type="number" id="lifelineInterval-country" value="25" min="1" step="1">
+              <span>guesses</span>
+            </div>
+          </div>
+
+          <div class="lifeline-setting-row" id="lifelineSettingRow-letters">
+            <div class="lifeline-setting-label">
+              <label class="toggle-switch">
+                <input type="checkbox" id="lifelineEnabled-letters" checked>
+                <span class="toggle-slider"></span>
+              </label>
+              <span>next letters</span>
+            </div>
+            <div class="lifeline-setting-controls">
+              <input type="number" id="lifelineInterval-letters" value="50" min="1" step="1">
+              <span>guesses</span>
+            </div>
+          </div>
+
+          <div class="lifeline-setting-row" id="lifelineSettingRow-freefill">
+            <div class="lifeline-setting-label">
+              <label class="toggle-switch">
+                <input type="checkbox" id="lifelineEnabled-freefill" checked>
+                <span class="toggle-slider"></span>
+              </label>
+              <span>free fill</span>
+            </div>
+            <div class="lifeline-setting-controls">
+              <input type="number" id="lifelineInterval-freefill" value="100" min="1" step="1">
+              <span>guesses</span>
+            </div>
+          </div>
+
+          <div id="lifelineValidationMsg" style="font-size: 0.7rem; color: var(--salmon-dark); min-height: 1em; margin-top: 0.25rem;"></div>
         </div>
 
         <div style="display: flex; gap: 0.5rem; width: 100%; max-width: 280px;">
@@ -502,7 +632,17 @@
     if (idx === -1) currentCityEl.textContent = name;
     else currentCityEl.innerHTML = name.slice(0, idx) + '<span class="next-letter">' + name.slice(idx, idx + 1) + '</span>' + name.slice(idx + 1);
     
-    currentCountryEl.textContent = isoToFlag(currentCityEntry.iso) + ' ' + currentCityEntry.co + ' \u2014 pop. ' + (currentCityEntry.p ? currentCityEntry.p.toLocaleString() : 'unknown');
+
+const subdivision = currentCityEntry.admin
+  ? ` • ${currentCityEntry.admin}`
+  : '';
+
+currentCountryEl.innerHTML =
+  `${isoToFlag(currentCityEntry.iso)} ${currentCityEntry.co} — pop. ${
+    currentCityEntry.p ? currentCityEntry.p.toLocaleString() : 'unknown'
+  }` +
+  `<br><span class="subdivision">${currentCityEntry.admin}</span>`;
+
   }
 
   function renderUsedList() {
@@ -730,17 +870,92 @@
     }
   });
 
+  // --- Lobby settings validation helpers ---
+
+  const LIFELINE_KEYS = ['country', 'letters', 'freefill'];
+
+  function getPositiveIntOrNull(value) {
+    if (value === null || value === undefined || value.toString().trim() === '') return null;
+    const n = Number(value);
+    if (!Number.isFinite(n) || !Number.isInteger(n) || n <= 0) return null;
+    return n;
+  }
+
+  function updateLifelineRowDisabledState() {
+    LIFELINE_KEYS.forEach(key => {
+      const enabled = document.getElementById('lifelineEnabled-' + key).checked;
+      document.getElementById('lifelineSettingRow-' + key).classList.toggle('disabled', !enabled);
+      document.getElementById('lifelineInterval-' + key).disabled = !enabled;
+    });
+  }
+
+  LIFELINE_KEYS.forEach(key => {
+    document.getElementById('lifelineEnabled-' + key).addEventListener('change', updateLifelineRowDisabledState);
+  });
+  updateLifelineRowDisabledState();
+
+  // Prevent typing non-positive values from lingering unnoticed; validate live
+  function validateTimerInput() {
+    const el = document.getElementById('customTimerInput');
+    const msgEl = document.getElementById('timerValidationMsg');
+    const val = getPositiveIntOrNull(el.value);
+    if (val === null) {
+      msgEl.textContent = 'Enter a whole number of seconds greater than 0.';
+      return null;
+    }
+    msgEl.textContent = '';
+    return val;
+  }
+
+  function validateLifelineIntervals() {
+    const msgEl = document.getElementById('lifelineValidationMsg');
+    const intervals = {};
+    let ok = true;
+    LIFELINE_KEYS.forEach(key => {
+      const enabled = document.getElementById('lifelineEnabled-' + key).checked;
+      if (!enabled) { intervals[key] = null; return; }
+      const val = getPositiveIntOrNull(document.getElementById('lifelineInterval-' + key).value);
+      if (val === null) ok = false;
+      intervals[key] = val;
+    });
+    msgEl.textContent = ok ? '' : 'Lifeline refill amounts must be whole numbers greater than 0.';
+    return ok ? intervals : null;
+  }
+
+  document.getElementById('customTimerInput').addEventListener('input', validateTimerInput);
+  LIFELINE_KEYS.forEach(key => {
+    document.getElementById('lifelineInterval-' + key).addEventListener('input', validateLifelineIntervals);
+  });
+
   // Handle Lobby Submission & Bundle Settings
   document.getElementById('lobbyForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const roomCode = document.getElementById('roomInput').value.trim();
     const playerName = document.getElementById('playerNameInput').value.trim();
-    
-    // Gather settings from the custom input
-    const finalTimer = document.getElementById('customTimerInput').value || 15;
-    
-    // Bundle into an object (easy to add region/country filters here later)
-    const roomSettings = { turnDuration: parseInt(finalTimer, 10) };
+
+    const turnDuration = validateTimerInput();
+    if (turnDuration === null) {
+      document.getElementById('customTimerInput').focus();
+      return;
+    }
+
+    const lifelinesEnabled = {};
+    LIFELINE_KEYS.forEach(key => {
+      lifelinesEnabled[key] = document.getElementById('lifelineEnabled-' + key).checked;
+    });
+
+    const lifelineIntervalsRaw = validateLifelineIntervals();
+    if (lifelineIntervalsRaw === null) {
+      return;
+    }
+    // Fall back to sane defaults for disabled lifelines (value unused server-side anyway)
+    const DEFAULT_INTERVALS = { country: 25, letters: 50, freefill: 100 };
+    const lifelineIntervals = {};
+    LIFELINE_KEYS.forEach(key => {
+      lifelineIntervals[key] = lifelineIntervalsRaw[key] !== null ? lifelineIntervalsRaw[key] : DEFAULT_INTERVALS[key];
+    });
+
+    const roomSettings = { turnDuration, lifelinesEnabled, lifelineIntervals };
     const settingsQuery = encodeURIComponent(JSON.stringify(roomSettings));
 
     if (roomCode && playerName) {

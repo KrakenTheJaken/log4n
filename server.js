@@ -7,6 +7,38 @@ CITIES_DATA.forEach(entry => {
   if (!cityIndex.has(key)) cityIndex.set(key, []);
   cityIndex.get(key).push(entry);
 });
+const allKeys = Array.from(cityIndex.keys());
+
+const DEFAULT_TURN_DURATION = 15;
+const DEFAULT_LIFELINE_INTERVALS = { country: 25, letters: 50, freefill: 100 };
+const DEFAULT_LIFELINES_ENABLED = { country: true, letters: true, freefill: true };
+
+function sanitizeTurnDuration(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return DEFAULT_TURN_DURATION;
+  return Math.floor(n);
+}
+
+function sanitizeLifelineIntervals(value) {
+  const result = { ...DEFAULT_LIFELINE_INTERVALS };
+  if (value && typeof value === "object") {
+    for (const key of Object.keys(DEFAULT_LIFELINE_INTERVALS)) {
+      const n = Number(value[key]);
+      if (Number.isFinite(n) && n > 0) result[key] = Math.floor(n);
+    }
+  }
+  return result;
+}
+
+function sanitizeLifelinesEnabled(value) {
+  const result = { ...DEFAULT_LIFELINES_ENABLED };
+  if (value && typeof value === "object") {
+    for (const key of Object.keys(DEFAULT_LIFELINES_ENABLED)) {
+      if (typeof value[key] === "boolean") result[key] = value[key];
+    }
+  }
+  return result;
+}
 
 export class CityChainServer extends Server {
   constructor(ctx, env) {
@@ -24,7 +56,12 @@ export class CityChainServer extends Server {
       winner: null,
       rematchVotes: [],
       message: "Waiting for opponent to join...",
-      settings: null // Locked in when first player connects
+      settings: null, // Locked in when first player connects
+      // Per-player lifeline tracking, keyed by player index (0/1)
+      lifelineState: [
+        { guessCount: 0, consumed: { country: 0, letters: 0, freefill: 0 }, freefillArmed: false },
+        { guessCount: 0, consumed: { country: 0, letters: 0, freefill: 0 }, freefillArmed: false }
+      ]
     };
     this.timerId = null;
     this.lastLoserIndex = null;
@@ -67,6 +104,10 @@ export class CityChainServer extends Server {
     this.gameState.usedKeys = [];
     this.gameState.usedCitiesData = [];
     this.gameState.rematchVotes = [];
+    this.gameState.lifelineState = [
+      { guessCount: 0, consumed: { country: 0, letters: 0, freefill: 0 }, freefillArmed: false },
+      { guessCount: 0, consumed: { country: 0, letters: 0, freefill: 0 }, freefillArmed: false }
+    ];
     const pool = CITIES_DATA.slice(0, 500); 
     this.gameState.currentCityEntry = pool[Math.floor(Math.random() * pool.length)];
     const startKey = this.gameState.currentCityEntry.a.toLowerCase().trim();
@@ -95,21 +136,38 @@ export class CityChainServer extends Server {
 
   startTurnTimer() {
     if (this.timerId) clearTimeout(this.timerId);
-    
-    const duration = this.gameState.settings.turnDuration;
-    
-    // Handle Infinite Timer
-    if (duration === -1) {
-      this.gameState.turnExpires = null; 
-      this.broadcastState();
-      return; 
-    }
 
+    const duration = sanitizeTurnDuration(this.gameState.settings?.turnDuration);
     this.gameState.turnExpires = Date.now() + (duration * 1000);
     this.broadcastState();
-    
+
     // Server backup timer
     this.timerId = setTimeout(() => this.handleTimeUp(), duration * 1000);
+  }
+
+  getPlayerIndex(connectionId) {
+    return this.gameState.players.findIndex(p => p.id === connectionId);
+  }
+
+  lifelineEarned(playerIndex, key) {
+    const interval = this.gameState.settings.lifelineIntervals[key];
+    const guessCount = this.gameState.lifelineState[playerIndex].guessCount;
+    return Math.floor(guessCount / interval) + 1;
+  }
+
+  lifelineAvailable(playerIndex, key) {
+    const consumed = this.gameState.lifelineState[playerIndex].consumed[key];
+    return this.lifelineEarned(playerIndex, key) - consumed;
+  }
+
+  getTopCandidates(requiredLetter, count) {
+    const matches = [];
+    for (const key of allKeys) {
+      if (this.getFirstLetter(key) !== requiredLetter || this.gameState.usedKeys.includes(key)) continue;
+      matches.push(cityIndex.get(key)[0]);
+    }
+    matches.sort((a, b) => b.p - a.p);
+    return matches.slice(0, count);
   }
 
   onMessage(connection, messageString) {
@@ -135,10 +193,12 @@ export class CityChainServer extends Server {
         player.name = data.name.substring(0, 15).trim();
         player.isReady = true; 
 
-        // Initialize settings from the first connected player
+        // Initialize settings from the first connected player, with validation
         if (!this.gameState.settings) {
           this.gameState.settings = {
-            turnDuration: data.settings?.turnDuration !== undefined ? data.settings.turnDuration : 15
+            turnDuration: sanitizeTurnDuration(data.settings?.turnDuration),
+            lifelinesEnabled: sanitizeLifelinesEnabled(data.settings?.lifelinesEnabled),
+            lifelineIntervals: sanitizeLifelineIntervals(data.settings?.lifelineIntervals)
           };
         }
 
@@ -151,6 +211,50 @@ export class CityChainServer extends Server {
       return;
     }
 
+    if (data.action === "use_lifeline" && this.gameState.status === "playing") {
+      const playerIndex = this.getPlayerIndex(connection.id);
+      if (playerIndex === -1) return;
+      const key = data.lifeline; // 'country' | 'letters' | 'freefill'
+      if (!["country", "letters", "freefill"].includes(key)) return;
+      if (!this.gameState.settings.lifelinesEnabled[key]) return;
+
+      const playerState = this.gameState.lifelineState[playerIndex];
+
+      if (key === "freefill") {
+        if (playerState.freefillArmed) {
+          playerState.freefillArmed = false;
+          connection.send(JSON.stringify({ type: "lifeline_result", lifeline: "freefill", result: "" }));
+          this.broadcastState();
+          return;
+        }
+        if (this.lifelineAvailable(playerIndex, "freefill") <= 0) return;
+        playerState.freefillArmed = true;
+        connection.send(JSON.stringify({ type: "lifeline_result", lifeline: "freefill", result: "armed — your next guess can be any valid, unused city." }));
+        this.broadcastState();
+        return;
+      }
+
+      if (this.lifelineAvailable(playerIndex, key) <= 0) return;
+
+      const [top] = this.getTopCandidates(this.gameState.requiredLetter, 1);
+      let resultText;
+      if (key === "country") {
+        resultText = top ? (top.iso + " " + top.co) : "no valid cities left for that letter.";
+      } else if (key === "letters") {
+        if (!top) resultText = "no valid cities left for that letter.";
+        else {
+          const cleaned = top.a.replace(/[^a-zA-Z]/g, "");
+          const thirdLen = Math.max(1, Math.ceil(cleaned.length / 3));
+          resultText = cleaned.split("").map((ch, i) => i < thirdLen ? ch.toUpperCase() : "_").join(" ");
+        }
+      }
+
+      playerState.consumed[key] += 1;
+      connection.send(JSON.stringify({ type: "lifeline_result", lifeline: key, result: resultText }));
+      this.broadcastState();
+      return;
+    }
+
     if (data.action === "guess" && this.gameState.status === "playing") {
       const activePlayer = this.gameState.players[this.gameState.currentTurn];
       if (!activePlayer || connection.id !== activePlayer.id) return;
@@ -160,8 +264,13 @@ export class CityChainServer extends Server {
          return; 
       }
 
+      const playerIndex = this.gameState.currentTurn;
+      const playerState = this.gameState.lifelineState[playerIndex];
+      const usingFreefill = playerState.freefillArmed;
+
       const guessKey = data.city.trim().toLowerCase();
-      if (this.getFirstLetter(guessKey) !== this.gameState.requiredLetter) {
+
+      if (!usingFreefill && this.getFirstLetter(guessKey) !== this.gameState.requiredLetter) {
         connection.send(JSON.stringify({ type: "error", message: `Needs to start with '${this.gameState.requiredLetter.toUpperCase()}'.` }));
         return;
       }
@@ -170,9 +279,14 @@ export class CityChainServer extends Server {
         return;
       }
       if (!cityIndex.has(guessKey)) {
-        const suggestion = this.findClosestSuggestion(guessKey, this.gameState.requiredLetter);
+        const suggestion = usingFreefill ? null : this.findClosestSuggestion(guessKey, this.gameState.requiredLetter);
         connection.send(JSON.stringify({ type: "error", message: suggestion ? `Typo? Did you mean "${suggestion.c}"?` : "That doesn't match a city in the list." }));
         return;
+      }
+
+      if (usingFreefill) {
+        playerState.consumed.freefill += 1;
+        playerState.freefillArmed = false;
       }
 
       connection.send(JSON.stringify({ type: "guess_success", key: guessKey }));
@@ -181,6 +295,7 @@ export class CityChainServer extends Server {
       this.gameState.usedCitiesData.unshift(this.gameState.currentCityEntry);
       this.gameState.requiredLetter = this.getLastLetter(guessKey);
       this.gameState.message = `${activePlayer.name} played ${this.gameState.currentCityEntry.c}.`;
+      playerState.guessCount += 1;
       this.gameState.currentTurn = this.gameState.currentTurn === 0 ? 1 : 0;
       this.startTurnTimer();
     }

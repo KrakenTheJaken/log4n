@@ -354,7 +354,7 @@
           fillOpacity: 0.6
         })
         .addTo(map)
-        .bindPopup(`<b>${city.c}, ${city.co}</b><br>Population: ${city.p.toLocaleString()}`);
+        .bindPopup(`<b>${city.c}, ${city.co}</b><br>\t${city.admin}</br>Population: ${city.p.toLocaleString()}`);
       }); 
   }
 
@@ -426,8 +426,10 @@
     
     const filtered = foundCitiesData.filter(city => {
       const cityName = (city.c || '').toLowerCase();
+      const cityNameAscii = (city.a || '').toLowerCase();
       const countryName = (city.co || '').toLowerCase();
-      return cityName.includes(term) || countryName.includes(term);
+      const adminName = (city.admin || '').toLowerCase();
+      return cityName.includes(term) || cityNameAscii.includes(term) || countryName.includes(term) || adminName.includes(term);
     });
 
     if (filtered.length === 0) {
