@@ -129,13 +129,19 @@
   .lifeline-col { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.75rem; }
   .lifeline-row { border: 1px solid var(--salmon-light); }
   .lifeline-row.armed { border-color: var(--salmon-dark); background: var(--salmon-light); }
+  
   .lifeline-btn {
     width: 100%; display: flex; justify-content: space-between; align-items: center;
-    background: none; color: var(--salmon-dark); border: none; font-size: 0.8rem;
+    background: linear-gradient(to right, #dff0d4 var(--progress, 0%), transparent var(--progress, 0%));
+    color: var(--salmon-dark); border: none; font-size: 0.8rem;
     font-weight: bold; text-align: left; padding: 0.45rem 0.7rem; cursor: pointer;
   }
-  .lifeline-btn:hover:not(:disabled) { background: var(--salmon-light); color: var(--ink); }
+  .lifeline-btn:hover:not(:disabled) { 
+    background: linear-gradient(to right, #dff0d4 var(--progress, 0%), var(--salmon-light) var(--progress, 0%)); 
+    color: var(--ink); 
+  }
   .lifeline-btn:disabled { opacity: 0.5; cursor: default; }
+  
   .lifeline-uses { font-size: 0.7rem; font-weight: normal; opacity: 0.8; }
   .lifeline-result { font-size: 0.8rem; padding: 0 0.7rem 0.5rem; color: var(--ink); }
   .lifeline-result:empty { display: none; }
@@ -191,10 +197,7 @@
   <h1>City Geusser</h1>
   <p class="subtitle">name a real city that starts with the last letter of the previous one. no repeats.</p>
   <p class="attribution">city data from <a href="https://simplemaps.com/data/world-cities" target="_blank" rel="noopener noreferrer">simplemaps.com/data/world-cities</a>, used under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
-  <!--<p class="caveat">some cities may have alternate spelling, have weird population figures</p>
-  <p class="caveat">if a city has a duplicate name, it only counts once.</p> 
-  add nicer later, and think about what to do about same name in stats.
-  -->
+
   <div class="mode-tabs">
     <div class="mode-tab active" id="tab-infinite" onclick="switchMode('infinite')">infinite</div>
     <div class="mode-tab" id="tab-timed" onclick="switchMode('timed')">sprint</div>
@@ -538,6 +541,10 @@
       els.result.textContent = state.result;
 
       if (els.row) els.row.classList.toggle('armed', !!state.armed);
+      
+      // Calculate progress and pass to CSS variable
+      const percent = (score % state.interval) / state.interval * 100;
+      els.btn.style.setProperty('--progress', percent + '%');
     });
   }
 
