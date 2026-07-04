@@ -229,7 +229,7 @@
   
   <h1>your analytics</h1>
   <p class="subtitle">a visual breakdown of your geographic footprint.</p>
-  <p class="attribution">city data from <a href="https://simplemaps.com/data/world-cities" target="_blank" rel="noopener noreferrer">simplemaps.com/data/world-cities</a>, used under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
+  <p class="attribution">city data from <a href="https://simplemaps.com/" target="_blank" rel="noopener noreferrer">simplemaps.com/data/world-cities</a>, used under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
 
   <div class="dashboard">
     
@@ -342,7 +342,24 @@
 
   document.getElementById('totalPopulation').textContent = totalPop.toLocaleString();
 
-  const map = L.map('map').setView([20, 0], 2);
+  function addCircleToMap(city,map,radius) {
+      let offsets = [0, -360, 360];
+      offsets.forEach(offset => {
+        L.circleMarker([city.lat, city.lng + offset], {
+          radius: radius,
+          fillColor: '#e8604f', 
+          color: '#2a1a17',        
+          weight: 1,
+          opacity: 0.8,
+          fillOpacity: 0.6
+        })
+        .addTo(map)
+        .bindPopup(`<b>${city.c}, ${city.co}</b><br>Population: ${city.p.toLocaleString()}`);
+      }); 
+  }
+
+
+  const map = L.map('map',{worldCopyJump: true}).setView([20, 0], 2);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>',
@@ -354,16 +371,11 @@
     if (city.lat !== undefined && city.lng !== undefined) {
       const radius = Math.max(3, Math.sqrt(city.p) / 400); 
 
-      L.circleMarker([city.lat, city.lng], {
-        radius: radius,
-        fillColor: '#e8604f', 
-        color: '#2a1a17',        
-        weight: 1,
-        opacity: 0.8,
-        fillOpacity: 0.6
-      })
-      .addTo(map)
-      .bindPopup(`<b>${city.c}, ${city.co}</b><br>Population: ${city.p.toLocaleString()}`);
+
+
+      addCircleToMap(city,map,radius);
+
+      
     }
   });
 

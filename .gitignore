@@ -1,5 +1,6 @@
 # Data and local scripts
 worldcities.csv
+uscities.csv
 test.py
 
 .env
