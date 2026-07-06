@@ -1,9 +1,20 @@
 import { Server, routePartykitRequest } from "partyserver";
 import { CITIES_DATA } from "./data.js";
 
+// Collapses apostrophe variants (' ' ` ´), accents, spaces, hyphens, etc. so
+// mobile autocorrect/curly-quote input still matches the stored key.
+function normalizeKey(s) {
+  return s
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+}
+
 const cityIndex = new Map();
 CITIES_DATA.forEach(entry => {
-  const key = entry.a.toLowerCase().trim();
+  const key = normalizeKey(entry.a);
   if (!cityIndex.has(key)) cityIndex.set(key, []);
   cityIndex.get(key).push(entry);
 });
@@ -110,7 +121,7 @@ export class CityChainServer extends Server {
     ];
     const pool = CITIES_DATA.slice(0, 500); 
     this.gameState.currentCityEntry = pool[Math.floor(Math.random() * pool.length)];
-    const startKey = this.gameState.currentCityEntry.a.toLowerCase().trim();
+    const startKey = normalizeKey(this.gameState.currentCityEntry.a);
     this.gameState.usedKeys.push(startKey);
     this.gameState.usedCitiesData.push(this.gameState.currentCityEntry);
     this.gameState.requiredLetter = this.getLastLetter(startKey);
@@ -268,7 +279,7 @@ export class CityChainServer extends Server {
       const playerState = this.gameState.lifelineState[playerIndex];
       const usingFreefill = playerState.freefillArmed;
 
-      const guessKey = data.city.trim().toLowerCase();
+      const guessKey = normalizeKey(data.city);
 
       if (!usingFreefill && this.getFirstLetter(guessKey) !== this.gameState.requiredLetter) {
         connection.send(JSON.stringify({ type: "error", message: `Needs to start with '${this.gameState.requiredLetter.toUpperCase()}'.` }));

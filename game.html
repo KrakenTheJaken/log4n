@@ -442,9 +442,20 @@
 <script src="cities.js"></script>
 
 <script>
+  // Collapses apostrophe variants (' ' ` ´), accents, spaces, hyphens, etc. so
+  // mobile autocorrect/curly-quote input still matches the stored key.
+  function normalizeKey(s) {
+    return s
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+  }
+
   const cityIndex = new Map();
   CITIES_DATA.forEach(entry => {
-    const key = entry.a.toLowerCase().trim();
+    const key = normalizeKey(entry.a);
     if (!cityIndex.has(key)) cityIndex.set(key, []);
     cityIndex.get(key).push(entry);
   });
@@ -826,7 +837,7 @@ currentCountryEl.innerHTML =
     }
 
     currentCityEntry = pendingStartCity || pickRandomStartingCity(); pendingStartCity = null;
-    const startKey = currentCityEntry.a.toLowerCase().trim();
+    const startKey = normalizeKey(currentCityEntry.a);
     usedKeys.add(startKey); recordLifetimeGuess(startKey); 
 
     scoreEl.textContent = score; renderCurrentCity(); renderUsedList(); setMessage(''); guessInput.value = '';
@@ -975,7 +986,7 @@ currentCountryEl.innerHTML =
     const raw = guessInput.value.trim();
     if (!raw) return;
 
-    const key = raw.toLowerCase();
+    const key = normalizeKey(raw);
     const requiredLetter = lastLetterOf(currentCityEntry.a);
     const guessFirstLetter = firstLetterOf(key);
     const usingFreefill = lifelines.freefill.armed;
