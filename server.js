@@ -3,13 +3,17 @@ import { CITIES_DATA } from "./data.js";
 
 // Collapses apostrophe variants (' ' ` ´), accents, spaces, hyphens, etc. so
 // mobile autocorrect/curly-quote input still matches the stored key.
+// Strips apostrophes, hyphens, and accents so mobile autocorrect/curly-quote
+// input still matches the stored key. Spaces are kept as meaningful
+// characters (e.g. "georgetown" vs "george town").
 function normalizeKey(s) {
   return s
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .normalize('NFKD')          // splits accented chars into base + diacritic (é -> e + ´)
+    .replace(/[\u0300-\u036f]/g, '') // strips the diacritic marks
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, "")
-    .trim();
+    .replace(/[^a-z0-9\s]/g, '') // strips everything except letters, digits, and spaces
+    .trim()
+    .replace(/\s+/g, ' ');       // collapses repeated/stray whitespace to a single space
 }
 
 const cityIndex = new Map();
