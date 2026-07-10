@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Just A Button</title>
+<style>
+  :root {
+    --salmon: #FA8072;
+    --salmon-dark: #e8604f;
+    --salmon-light: #fdb8b0;
+    --cream: #fff8f5;
+    --ink: #2a1a17;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 13px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  main {
+    width: 100%;
+    max-width: 400px;
+    padding: 1.5rem;
+  }
+
+  .panel {
+    background: #ffffff;
+    border: 1px solid var(--salmon-light);
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .play-btn {
+    display: inline-block;
+    background: var(--salmon);
+    color: var(--cream);
+    border: 1px solid var(--salmon-dark);
+    font-family: Verdana, Geneva, sans-serif;
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .play-btn:hover {
+    background: var(--salmon-dark);
+  }
+
+  #hiddenText {
+    display: none;
+    margin-top: 1.5rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--salmon-dark);
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="panel">
+    <button class="play-btn" id="actionBtn">Click Me</button>
+    <div id="hiddenText">The team you should scout is team 5113  </div>
+  </div>
+</main>
+
+<script>
+  const btn = document.getElementById('actionBtn');
+  const text = document.getElementById('hiddenText');
+
+  btn.addEventListener('click', () => {
+    if (text.style.display === 'block') {
+      text.style.display = 'none';
+      btn.textContent = 'Click Me';
+    } else {
+      text.style.display = 'block';
+      btn.textContent = 'Click me again if u want to ig';
+    }
+  });
+</script>
+
+</body>
+</html>
