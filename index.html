@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <meta http-equiv="refresh" content="0; url=https://log4n.com/game/"> <!-- TEMPORARY DONT FORGET TO REMOVE TODO!!!-->
 
 <title>log4n</title>
 <style>
@@ -88,7 +87,7 @@
   .panel p {
     line-height: 1.6;
     font-size: 0.9rem;
-    margin: 0 0 0.75rem;
+    margin: 0 2.5rem 0.75rem;
   }
 
   .play-btn {
@@ -110,7 +109,6 @@
   .page-view { display: none; }
   .page-view.active { display: block; }
 
-  /* ---- slide-out tab panel ---- */
 
   .tab-toggle {
     position: fixed;
@@ -207,6 +205,7 @@
   <nav>
     <button class="tab-link active" data-page="home">home</button>
     <button class="tab-link" data-page="games">games</button>
+    <button class="tab-link" data-page="bookmarks">bookmarks</button>
   </nav>
 </div>
 
@@ -250,7 +249,38 @@
 
   <section class="page-view" id="page-games">
     <div class="panel">
-      <a href="game.html" class="play-btn">City Geusser &rarr;</a>
+      <!--<a href="game.html" class="play-btn">City Guesser </a>
+      <p> name   consecutive cities, where the next city name starts with the last letter of the previous city name.</p>
+   -->
+      <p>unlimited bacon (Coming Soon)</p>
+   </div>
+  </section>
+
+  <section class="page-view" id="page-bookmarks">
+    <div class="panel">
+      <h2>Bookmarks</h2>
+      <ul>
+        <li>
+          <a href="https://p2r3.github.io/convert/" target="_blank">File Converter</a>
+          <p>Converts from any file format to any other format</p>
+        </li>
+        <li>
+          <a href="https://map-making.app/" target="_blank">Street Viewer</a>
+          <p>Good tool for pulling up Street View & looking at coverage</p>
+        </li>
+        <li>
+          <a href="https://www.flightconnections.com/" target="_blank">Flight Connections</a>
+          <p>Airline Route Visualizer</p>
+        </li>
+        <li>
+          <a href="https://github.com/adryd325/oneko.js" target="_blank">oneko.js</a>
+          <p>kitty following your cursor</p>
+        </li>
+        <li>
+          <a href="https://cobalt.tools/" target="_blank">Video Downloader</a>
+          <p>Download videos from various websites</p>
+        </li>
+      </ul>
     </div>
   </section>
 
@@ -267,9 +297,31 @@
   const tabLinks = document.querySelectorAll('.tab-link');
   const pageViews = document.querySelectorAll('.page-view');
 
+  const VALID_PAGES = Array.from(tabLinks).map(link => link.dataset.page);
+  const DEFAULT_PAGE = 'home';
+
   function closeDrawer() {
     tabDrawer.classList.remove('open');
     drawerOverlay.classList.remove('open');
+  }
+
+  // Applies a page as the active view/tab, without touching the URL — the
+  // URL is updated separately (see the click handler and hash sync below)
+  // so this can also be called when *responding* to a hash change without
+  // creating a redundant history entry.
+  function showPage(page) {
+    tabLinks.forEach(l => l.classList.toggle('active', l.dataset.page === page));
+    pageViews.forEach(view => {
+      view.classList.toggle('active', view.id === 'page-' + page);
+    });
+  }
+
+  // Reads the current #hash and returns a valid page name, falling back to
+  // the default for an empty, unrecognized, or malformed hash — so a typo'd
+  // or stale link never leaves the page showing nothing.
+  function pageFromHash() {
+    const raw = window.location.hash.replace(/^#/, '');
+    return VALID_PAGES.includes(raw) ? raw : DEFAULT_PAGE;
   }
 
   tabToggle.addEventListener('click', () => {
@@ -282,17 +334,19 @@
   tabLinks.forEach(link => {
     link.addEventListener('click', () => {
       const target = link.dataset.page;
-
-      tabLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-
-      pageViews.forEach(view => {
-        view.classList.toggle('active', view.id === 'page-' + target);
-      });
-
+      // Triggers the 'hashchange' listener below, which calls showPage —
+      // no need to call it directly here too.
+      window.location.hash = target;
       closeDrawer();
     });
   });
+
+  window.addEventListener('hashchange', () => showPage(pageFromHash()));
+
+  // Initial load: honor a hash already in the URL (refresh, shared link,
+  // or browser back/forward landing here) instead of always resetting to
+  // home.
+  showPage(pageFromHash());
 </script>
 
 </body>
