@@ -106,6 +106,35 @@
     color: var(--cream);
   }
 
+  .project-btn {
+    display: inline-block;
+    background: var(--salmon);
+    color: var(--cream);
+    border: 1px solid var(--salmon-dark);
+    box-shadow: 3px 3px 0 var(--salmon-dark);
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-decoration: none;
+    padding: 0.55rem 1.1rem;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+  }
+
+  .project-btn:hover {
+    background: var(--salmon-dark);
+    color: var(--cream);
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  .project-btn:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+
+  .panel .project-actions {
+    margin: 0.4rem 2.5rem 0.4rem;
+  }
+
   .page-view { display: none; }
   .page-view.active { display: block; }
 
@@ -204,7 +233,7 @@
 <div class="tab-drawer" id="tabDrawer">
   <nav>
     <button class="tab-link active" data-page="home">home</button>
-    <button class="tab-link" data-page="games">games</button>
+    <button class="tab-link" data-page="projects">projects</button>
     <button class="tab-link" data-page="bookmarks">bookmarks</button>
   </nav>
 </div>
@@ -247,12 +276,15 @@
  
   </section>
 
-  <section class="page-view" id="page-games">
+  <section class="page-view" id="page-projects">
     <div class="panel">
       <!--<a href="game.html" class="play-btn">City Guesser </a>
       <p> name   consecutive cities, where the next city name starts with the last letter of the previous city name.</p>
    -->
-      <p>unlimited bacon (Coming Soon)</p>
+      <h2>Fantasy Election</h2>
+      <p>redraw us counties into new states and watch the electoral college move. 2012 to 2024. (AI)</p>
+      <div class="project-actions"><a href="fantasy-election.html" class="project-btn">open it &rarr;</a></div>
+
    </div>
   </section>
 
