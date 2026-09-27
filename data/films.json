@@ -1,0 +1,335 @@
+{
+  "the-invite-2026": {
+    "title": "The Invite",
+    "year": 2026,
+    "released": "2026-06-26",
+    "director": "Olivia Wilde",
+    "runtime": 107,
+    "cast": [
+      "Olivia Wilde",
+      "Seth Rogen",
+      "Penélope Cruz",
+      "Edward Norton"
+    ],
+    "genres": [
+      "romance",
+      "drama",
+      "comedy"
+    ],
+    "myGenres": [],
+    "myTags": [],
+    "tags": [
+      "romance",
+      "drama",
+      "comedy",
+      "2020s"
+    ],
+    "quote": null,
+    "tmdb": 950028,
+    "letterboxd": "https://letterboxd.com/film/the-invite-2026/",
+    "poster": "/data/posters/the-invite-2026.jpg",
+    "hasReview": false,
+    "listed": true,
+    "auto": {
+      "director": "Olivia Wilde",
+      "genres": [
+        "romance",
+        "drama",
+        "comedy"
+      ],
+      "cast": [
+        "Olivia Wilde",
+        "Seth Rogen",
+        "Penélope Cruz",
+        "Edward Norton",
+        "Skip Howland",
+        "Mel Powell",
+        "Rachel Thurow",
+        "Mario Valdez"
+      ],
+      "runtime": 107,
+      "released": "2026-06-26"
+    },
+    "watches": [
+      {
+        "id": "1510921775",
+        "date": "2026-09-25",
+        "rating": 5.0,
+        "liked": true,
+        "rewatch": false,
+        "spoilers": false,
+        "take": "<p>Is this was sexual attraction feels like ?</p>",
+        "url": "https://letterboxd.com/xtrakitty/film/the-invite-2026/"
+      }
+    ]
+  },
+  "primetime-2026": {
+    "title": "Primetime",
+    "year": 2026,
+    "released": "2026-09-25",
+    "director": "Lance Oppenheim",
+    "runtime": 110,
+    "cast": [
+      "Robert Pattinson",
+      "Merritt Wever",
+      "Skyler Gisondo",
+      "Phoebe Bridgers"
+    ],
+    "genres": [
+      "thriller",
+      "drama"
+    ],
+    "myGenres": [],
+    "myTags": [],
+    "tags": [
+      "thriller",
+      "drama",
+      "2020s"
+    ],
+    "quote": null,
+    "tmdb": 1375441,
+    "letterboxd": "https://letterboxd.com/film/primetime-2026/",
+    "poster": "/data/posters/primetime-2026.jpg",
+    "hasReview": false,
+    "listed": true,
+    "auto": {
+      "director": "Lance Oppenheim",
+      "genres": [
+        "thriller",
+        "drama"
+      ],
+      "cast": [
+        "Robert Pattinson",
+        "Merritt Wever",
+        "Skyler Gisondo",
+        "Phoebe Bridgers",
+        "Matthew Maher",
+        "Bokeem Woodbine",
+        "Alex Winter",
+        "Anna Faris",
+        "Eric Rahill",
+        "Bill Heck",
+        "Tony Revolori",
+        "Bob Ari"
+      ],
+      "runtime": 110,
+      "released": "2026-09-25"
+    },
+    "watches": [
+      {
+        "id": "1509539263",
+        "date": "2026-09-24",
+        "rating": 5.0,
+        "liked": true,
+        "rewatch": false,
+        "spoilers": false,
+        "take": "<p>3 villains the film decides to feature:</p><p>1. Osama Bin Laden<br />2. Saddam Hussein,<br />3.  and the democrats</p>",
+        "url": "https://letterboxd.com/xtrakitty/film/primetime-2026/"
+      }
+    ]
+  },
+  "on-the-waterfront": {
+    "title": "On the Waterfront",
+    "year": 1954,
+    "released": "1954-08-06",
+    "director": "Elia Kazan",
+    "runtime": 108,
+    "cast": [
+      "Marlon Brando",
+      "Eva Marie Saint",
+      "Karl Malden",
+      "Lee J. Cobb"
+    ],
+    "genres": [
+      "romance",
+      "drama",
+      "crime"
+    ],
+    "myGenres": [],
+    "myTags": [],
+    "tags": [
+      "romance",
+      "drama",
+      "crime",
+      "1950s"
+    ],
+    "quote": null,
+    "tmdb": 654,
+    "letterboxd": "https://letterboxd.com/film/on-the-waterfront/",
+    "poster": "/data/posters/on-the-waterfront.jpg",
+    "hasReview": false,
+    "listed": true,
+    "auto": {
+      "director": "Elia Kazan",
+      "genres": [
+        "romance",
+        "drama",
+        "crime"
+      ],
+      "cast": [
+        "Marlon Brando",
+        "Eva Marie Saint",
+        "Karl Malden",
+        "Lee J. Cobb",
+        "Rod Steiger",
+        "Pat Henning",
+        "Leif Erickson",
+        "James Westerfield",
+        "Tony Galento",
+        "Tami Mauriello",
+        "John F. Hamilton",
+        "John Heldabrand"
+      ],
+      "runtime": 108,
+      "released": "1954-08-06"
+    },
+    "watches": [
+      {
+        "id": "1504453991",
+        "date": "2026-09-20",
+        "rating": 3.0,
+        "liked": false,
+        "rewatch": false,
+        "spoilers": false,
+        "take": "<p>How it feels to live in New Jersey</p>",
+        "url": "https://letterboxd.com/xtrakitty/film/on-the-waterfront/"
+      }
+    ]
+  },
+  "the-night-of-the-hunter": {
+    "title": "The Night of the Hunter",
+    "year": 1955,
+    "released": "1955-07-27",
+    "director": "Charles Laughton",
+    "runtime": 93,
+    "cast": [
+      "Robert Mitchum",
+      "Shelley Winters",
+      "Lillian Gish",
+      "Billy Chapin"
+    ],
+    "genres": [
+      "drama",
+      "crime",
+      "thriller",
+      "horror"
+    ],
+    "myGenres": [],
+    "myTags": [],
+    "tags": [
+      "drama",
+      "crime",
+      "thriller",
+      "horror",
+      "1950s"
+    ],
+    "quote": null,
+    "tmdb": 3112,
+    "letterboxd": "https://letterboxd.com/film/the-night-of-the-hunter/",
+    "poster": "/data/posters/the-night-of-the-hunter.jpg",
+    "hasReview": false,
+    "listed": true,
+    "auto": {
+      "director": "Charles Laughton",
+      "genres": [
+        "drama",
+        "crime",
+        "thriller",
+        "horror"
+      ],
+      "cast": [
+        "Robert Mitchum",
+        "Shelley Winters",
+        "Lillian Gish",
+        "Billy Chapin",
+        "Sally Jane Bruce",
+        "James Gleason",
+        "Evelyn Varden",
+        "Don Beddoe",
+        "Peter Graves",
+        "James Griffith",
+        "Gloria Castillo",
+        "Gloria Pall"
+      ],
+      "runtime": 93,
+      "released": "1955-07-27"
+    },
+    "watches": [
+      {
+        "id": "1498972271",
+        "date": "2026-09-16",
+        "rating": 5.0,
+        "liked": true,
+        "rewatch": false,
+        "spoilers": false,
+        "take": "<p>This is a wonderful Christmas movie !</p>",
+        "url": "https://letterboxd.com/xtrakitty/film/the-night-of-the-hunter/"
+      }
+    ]
+  },
+  "double-indemnity": {
+    "title": "Double Indemnity",
+    "year": 1944,
+    "released": "1944-07-06",
+    "director": "Billy Wilder",
+    "runtime": 107,
+    "cast": [
+      "Fred MacMurray",
+      "Barbara Stanwyck",
+      "Edward G. Robinson",
+      "Porter Hall"
+    ],
+    "genres": [
+      "crime",
+      "thriller"
+    ],
+    "myGenres": [],
+    "myTags": [],
+    "tags": [
+      "crime",
+      "thriller",
+      "1940s"
+    ],
+    "quote": null,
+    "tmdb": 996,
+    "letterboxd": "https://letterboxd.com/film/double-indemnity/",
+    "poster": "/data/posters/double-indemnity.jpg",
+    "hasReview": false,
+    "listed": true,
+    "auto": {
+      "director": "Billy Wilder",
+      "genres": [
+        "crime",
+        "thriller"
+      ],
+      "cast": [
+        "Fred MacMurray",
+        "Barbara Stanwyck",
+        "Edward G. Robinson",
+        "Porter Hall",
+        "Jean Heather",
+        "Tom Powers",
+        "Byron Barr",
+        "Richard Gaines",
+        "Fortunio Bonanova",
+        "John Philliber",
+        "Douglas Spencer",
+        "Mona Freeman"
+      ],
+      "runtime": 107,
+      "released": "1944-07-06"
+    },
+    "watches": [
+      {
+        "id": "1489976903",
+        "date": "2026-09-09",
+        "rating": 4.0,
+        "liked": true,
+        "rewatch": false,
+        "spoilers": false,
+        "take": "<p>Guy has a foot fetish... And no matter how much I wanted money, I could never kiss a guy named Walter</p>",
+        "url": "https://letterboxd.com/xtrakitty/film/double-indemnity/1/"
+      }
+    ]
+  }
+}

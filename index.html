@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>log4n</title>
+<meta name="description" content="logan's website: projects, bookmarks, and films">
+<meta property="og:site_name" content="log4n">
+<meta property="og:title" content="log4n">
+<meta property="og:description" content="logan's website: projects, bookmarks, and films">
+<meta property="og:url" content="https://log4n.com/">
+<meta name="theme-color" content="#e8604f">
 <style>
   :root {
     --salmon: #FA8072;
@@ -216,6 +222,294 @@
     pointer-events: auto;
   }
 
+  .film-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 1rem;
+    margin: 0 0.5rem;
+  }
+
+  .film-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.8rem;
+  }
+
+  .film-tile .poster {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    background: var(--salmon-light);
+    border: 1px solid var(--salmon-light);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .film-tile img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .film-tile:hover { color: var(--salmon-dark); }
+
+  .film-tile:hover .poster {
+    border-color: var(--salmon-dark);
+    box-shadow: 3px 3px 0 var(--salmon-dark);
+    transform: translate(-1px, -1px);
+  }
+
+  .film-tile .tag {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--salmon-dark);
+    color: var(--cream);
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 0.1rem 0.35rem;
+  }
+
+  .film-tile .stars { color: var(--salmon-dark); letter-spacing: 0.05em; }
+
+  /* not ".heart": oneko.js already uses that class for its click hearts */
+  .liked-heart {
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    vertical-align: -0.1em;
+    margin-left: 0.25em;
+    fill: var(--salmon-dark);
+  }
+
+  .film-tools {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0 0.5rem 0.6rem;
+  }
+
+  .film-search {
+    flex: 1;
+    min-width: 0;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 0.85rem;
+    color: var(--ink);
+    background: var(--cream);
+    border: 1px solid var(--salmon-light);
+    padding: 0.45rem 0.6rem;
+  }
+
+  .film-search:focus { outline: none; border-color: var(--salmon-dark); background: #ffffff; }
+
+  .filter-toggle {
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 0.8rem;
+    background: var(--cream);
+    color: var(--ink);
+    border: 1px solid var(--salmon-light);
+    padding: 0.4rem 0.7rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .film-sort {
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 0.8rem;
+    color: var(--ink);
+    background: var(--cream);
+    border: 1px solid var(--salmon-light);
+    padding: 0.35rem 0.4rem;
+    cursor: pointer;
+  }
+
+  .film-sort:hover, .film-sort:focus { border-color: var(--salmon-dark); outline: none; }
+
+  .film-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1.2rem;
+    margin: 0 0.5rem 0.9rem;
+    font-size: 0.75rem;
+    opacity: 0.8;
+  }
+
+  .film-stats b {
+    color: var(--salmon-dark);
+    font-size: 0.95rem;
+    margin-right: 0.2rem;
+  }
+
+  .latest-watch {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin: 0 2.5rem 0.4rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .latest-watch img {
+    width: 70px;
+    flex: none;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border: 1px solid var(--salmon-dark);
+    box-shadow: 2px 2px 0 var(--salmon-dark);
+  }
+
+  .latest-watch:hover .latest-title { color: var(--salmon-dark); }
+  .latest-title { font-weight: bold; font-size: 0.95rem; }
+  .latest-title span { font-weight: normal; opacity: 0.6; }
+  .latest-watch .stars { color: var(--salmon-dark); }
+  .latest-take {
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    margin-top: 0.3rem;
+  }
+  .latest-take p { margin: 0; }
+
+  @media (max-width: 480px) {
+    .latest-watch { margin: 0 0 0.4rem; }
+    .film-tools { flex-wrap: wrap; }
+    .film-search { flex-basis: 100%; }
+  }
+
+  .filter-toggle:hover,
+  .filter-toggle[aria-expanded="true"] { border-color: var(--salmon-dark); }
+
+  .filter-panel {
+    margin: 0 0.5rem 0.8rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--cream);
+    border: 1px dashed var(--salmon-light);
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .filter-group {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0.5rem;
+    align-items: baseline;
+  }
+
+  .filter-group-name {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.6;
+  }
+
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .filter-group.open .filter-chips {
+    max-height: 9rem;
+    overflow-y: auto;
+  }
+
+  .chip-more {
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 0.72rem;
+    color: var(--salmon-dark);
+    background: none;
+    border: 1px dashed var(--salmon-light);
+    padding: 0.1rem 0.45rem;
+    cursor: pointer;
+  }
+
+  .group-find {
+    width: 100%;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 0.72rem;
+    color: var(--ink);
+    background: #ffffff;
+    border: 1px solid var(--salmon-light);
+    padding: 0.2rem 0.4rem;
+    margin-bottom: 0.1rem;
+  }
+
+  .filter-suggest {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem;
+    margin: 0 0.5rem 0.6rem;
+    font-size: 0.72rem;
+  }
+
+  .filter-suggest .label { opacity: 0.6; }
+  .filter-suggest .kind { opacity: 0.55; }
+
+  .tag-chip {
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 0.72rem;
+    color: var(--ink);
+    background: #ffffff;
+    border: 1px solid var(--salmon-light);
+    padding: 0.1rem 0.45rem;
+    cursor: pointer;
+  }
+
+  .tag-chip:hover { border-color: var(--salmon-dark); }
+
+  .tag-chip.active {
+    background: var(--salmon);
+    border-color: var(--salmon-dark);
+    color: var(--cream);
+  }
+
+  .tag-chip .count { opacity: 0.55; }
+  .tag-chip.stars-chip { color: var(--salmon-dark); letter-spacing: 0.05em; }
+  .tag-chip.active.stars-chip { color: var(--cream); }
+
+  .film-status {
+    margin: 0 0.5rem 0.8rem;
+    font-size: 0.75rem;
+    opacity: 0.65;
+  }
+
+  .film-status button {
+    font: inherit;
+    color: var(--salmon-dark);
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: 0.4rem;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .show-more {
+    display: block;
+    margin: 1rem auto 0;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 0.8rem;
+    background: var(--cream);
+    color: var(--ink);
+    border: 1px solid var(--salmon-light);
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+  }
+
+  .show-more:hover { border-color: var(--salmon-dark); }
+
+  /* display: grid/block above would otherwise override the hidden attribute */
+  .filter-panel[hidden],
+  .show-more[hidden],
+  .filter-suggest[hidden] { display: none; }
+
+  @media (max-width: 480px) {
+    .filter-group { grid-template-columns: 1fr; gap: 0.25rem; }
+  }
+
   footer {
     max-width: 720px;
     margin: 0 auto;
@@ -234,6 +528,7 @@
   <nav>
     <button class="tab-link active" data-page="home">home</button>
     <button class="tab-link" data-page="projects">projects</button>
+    <button class="tab-link" data-page="films">films</button>
     <button class="tab-link" data-page="bookmarks">bookmarks</button>
   </nav>
 </div>
@@ -254,6 +549,12 @@
       <p>email: <a href="mailto:logan11clark@gmail.com">logan11clark@gmail.com</a></p>
       <p>github: <a href="https://github.com/krakenthejaken" target="_blank">krakenthejaken</a></p>
       <!-- <p>linkedin: <a href="https://www.linkedin.com/in/logan-h-clark" target="_blank">logan clark</a></p> -->
+    </div>
+
+    <div class="panel" id="latestPanel" hidden>
+      <h2>Last Watched</h2>
+      <div id="latestWatch"></div>
+      <div class="project-actions"><a href="#films" class="project-btn">all films &rarr;</a></div>
     </div>
 
 
@@ -286,6 +587,31 @@
       <div class="project-actions"><a href="fantasy-election.html" class="project-btn">open it &rarr;</a></div>
 
    </div>
+  </section>
+
+  <section class="page-view" id="page-films">
+    <div class="panel">
+      <h2>Films</h2>
+      <p>films I have watched :) </p>
+      <div class="film-stats" id="filmStats"></div>
+      <div class="film-tools">
+        <input type="search" class="film-search" id="filmSearch" placeholder="search titles, directors, tags&hellip;" aria-label="search films" autocomplete="off">
+        <select class="film-sort" id="filmSort" aria-label="sort films">
+          <option value="recent">recently watched</option>
+          <option value="rating">highest rated</option>
+          <option value="newest">newest release</option>
+          <option value="oldest">oldest release</option>
+          <option value="title">title A&ndash;Z</option>
+          <option value="runtime">longest</option>
+        </select>
+        <button class="filter-toggle" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">filters</button>
+      </div>
+      <div class="filter-suggest" id="filterSuggest" hidden></div>
+      <div class="filter-panel" id="filterPanel" hidden></div>
+      <div class="film-status" id="filmStatus"></div>
+      <div class="film-grid" id="filmGrid"><p>loading&hellip;</p></div>
+      <button class="show-more" id="showMore" hidden>show more</button>
+    </div>
   </section>
 
   <section class="page-view" id="page-bookmarks">
@@ -387,6 +713,448 @@
   // or browser back/forward landing here) instead of always resetting to
   // home.
   showPage(pageFromHash());
+
+  // Films tab: data/films.json is written by scripts/sync_films.py (run by a
+  // GitHub Action), newest watch first.
+  const filmGrid = document.getElementById('filmGrid');
+
+  // On the live site /films/<slug> is films/<slug>.html (written by the sync,
+  // with link-preview tags). Locally, film.html?f= works without a sync.
+  function filmUrl(slug) {
+    const local = ['localhost', '127.0.0.1', ''].includes(location.hostname);
+    return local ? 'film.html?f=' + encodeURIComponent(slug) : '/films/' + encodeURIComponent(slug);
+  }
+
+  function stars(rating) {
+    if (rating == null) return '';
+    return '★'.repeat(Math.floor(rating)) + (rating % 1 ? '½' : '');
+  }
+
+  // Drawn instead of the ♥ character, which some fonts don't have.
+  const HEART_PATH = 'M12 21s-7.5-4.6-10-9.3C.3 8.4 2.2 4 6.3 4c2.4 0 3.9 1.3 5.7 3.4C13.8 5.3 15.3 4 17.7 4c4.1 0 6 4.4 4.3 7.7C19.5 16.4 12 21 12 21z';
+
+  function likedHeart() {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('class', 'liked-heart');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'liked');
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', HEART_PATH);
+    svg.appendChild(path);
+    return svg;
+  }
+
+  function filmTile(slug, film) {
+    const tile = document.createElement('a');
+    tile.className = 'film-tile';
+    tile.href = filmUrl(slug);
+
+    const poster = document.createElement('div');
+    poster.className = 'poster';
+    if (film.poster) {
+      const img = document.createElement('img');
+      img.src = film.poster;
+      img.alt = film.title + ' poster';
+      img.loading = 'lazy';
+      poster.appendChild(img);
+    }
+    if (film.hasReview) {
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = 'review';
+      poster.appendChild(tag);
+    }
+
+    const title = document.createElement('span');
+    title.textContent = film.title + (film.year ? ' (' + film.year + ')' : '');
+
+    const rating = document.createElement('span');
+    rating.className = 'stars';
+    rating.textContent = stars(film.watches[0].rating);
+    if (film.watches[0].liked) rating.appendChild(likedHeart());
+
+    tile.append(poster, title, rating);
+    return tile;
+  }
+
+  // Search + filters. Filters are keys like "tag:crime", "dir:Billy Wilder",
+  // "stars:4.5" and "liked"; a film has to match all active ones. They live
+  // in the URL (?f=tag:crime&q=noir#films) so film pages can link here.
+  const filmSearch = document.getElementById('filmSearch');
+  const filterToggle = document.getElementById('filterToggle');
+  const filterPanel = document.getElementById('filterPanel');
+  const filmStatus = document.getElementById('filmStatus');
+
+  const filmSort = document.getElementById('filmSort');
+  const filmStats = document.getElementById('filmStats');
+
+  // Each sort falls back to "recently watched" (the file's order) for ties.
+  const SORTS = {
+    recent: () => 0,
+    rating: (a, b) => (b.film.watches[0].rating || 0) - (a.film.watches[0].rating || 0),
+    newest: (a, b) => (b.film.year || 0) - (a.film.year || 0),
+    oldest: (a, b) => (a.film.year || 9999) - (b.film.year || 9999),
+    title: (a, b) => a.film.title.replace(/^the /i, '').localeCompare(b.film.title.replace(/^the /i, '')),
+    runtime: (a, b) => (b.film.runtime || 0) - (a.film.runtime || 0)
+  };
+
+  // The sort choice is remembered in this browser (a link's ?sort= wins).
+  const SORT_KEY = 'log4n-film-sort';
+  const params = new URLSearchParams(location.search);
+  let savedSort = null;
+  try { savedSort = localStorage.getItem(SORT_KEY); } catch {}
+  const initialSort = SORTS[params.get('sort')] ? params.get('sort') : savedSort;
+  if (SORTS[initialSort]) filmSort.value = initialSort;
+  const activeFilters = new Set(params.getAll('f'));
+  filmSearch.value = params.get('q') || '';
+
+  const showMore = document.getElementById('showMore');
+
+  // Only the first PAGE matches are drawn (plus more on "show more"), and a
+  // tile is only built the first time it's shown — laying out thousands of
+  // posters at once is what gets slow on a big list, not the searching.
+  const PAGE = 60;
+  let limit = PAGE;
+
+  let entries = [];  // { slug, film, tile (built lazily), keys: Set, haystack }
+  const chips = [];  // { key, el }
+  const filterSuggest = document.getElementById('filterSuggest');
+  const GROUP_LIMIT = 8;       // chips shown per group before "+ N more"
+  const keyGroup = {};         // filter key -> group name, for suggestions
+
+  function filterKeys(film) {
+    const latest = film.watches[0];
+    const keys = (film.tags || []).map(t => 'tag:' + t);
+    if (latest.rating != null) keys.push('stars:' + latest.rating);
+    if (latest.liked) keys.push('liked');
+    if (film.director) keys.push('dir:' + film.director);
+    (film.cast || []).forEach(name => keys.push('cast:' + name));
+    return new Set(keys);
+  }
+
+  function searchText(film) {
+    const takes = film.watches.map(w => w.take.replace(/<[^>]+>/g, ' ')).join(' ');
+    return [film.title, film.year, film.director, (film.cast || []).join(' '), (film.tags || []).join(' '), takes]
+      .join(' ').toLowerCase();
+  }
+
+  function syncUrl() {
+    const next = new URLSearchParams();
+    activeFilters.forEach(f => next.append('f', f));
+    if (filmSearch.value.trim()) next.set('q', filmSearch.value.trim());
+    if (filmSort.value !== 'recent') next.set('sort', filmSort.value);
+    const query = next.toString();
+    history.replaceState(null, '', location.pathname + (query ? '?' + query : '') + location.hash);
+  }
+
+  function applyFilters(keepLimit) {
+    if (!keepLimit) limit = PAGE;
+    const words = filmSearch.value.toLowerCase().split(/\s+/).filter(Boolean);
+    const sort = SORTS[filmSort.value];
+    const matches = entries.filter(entry =>
+      [...activeFilters].every(f => entry.keys.has(f)) &&
+      words.every(w => entry.haystack.includes(w))
+    ).sort((a, b) => sort(a, b) || a.order - b.order);
+    const shown = matches.length;
+
+    filmGrid.replaceChildren(...matches.slice(0, limit).map(entry =>
+      entry.tile || (entry.tile = filmTile(entry.slug, entry.film))
+    ));
+    showMore.hidden = shown <= limit;
+    showMore.textContent = 'show more (' + (shown - limit) + ' left)';
+    chips.forEach(c => c.el.classList.toggle('active', activeFilters.has(c.key)));
+    groupsBuilt.forEach(updateGroupVisibility);
+    updateSuggestions();
+
+    const n = activeFilters.size;
+    filterToggle.textContent = n ? 'filters (' + n + ')' : 'filters';
+
+    filmStatus.replaceChildren();
+    if (!entries.length) {
+      filmStatus.textContent = 'nothing yet!';
+    } else if (n || words.length) {
+      filmStatus.textContent = shown
+        ? 'showing ' + shown + ' of ' + entries.length + ' films'
+        : 'no films match that';
+      const clear = document.createElement('button');
+      clear.textContent = 'clear';
+      clear.addEventListener('click', () => {
+        activeFilters.clear();
+        filmSearch.value = '';
+        syncUrl();
+        applyFilters();
+      });
+      filmStatus.appendChild(clear);
+    }
+  }
+
+  function chipLabel(key) {
+    if (key.startsWith('stars:')) return stars(parseFloat(key.slice(6)));
+    if (key === 'liked') return 'liked';
+    return key.slice(key.indexOf(':') + 1);
+  }
+
+  function toggleFilter(key) {
+    activeFilters.has(key) ? activeFilters.delete(key) : activeFilters.add(key);
+    syncUrl();
+    applyFilters();
+  }
+
+  function makeChip(key, count) {
+    const chip = document.createElement('button');
+    chip.className = 'tag-chip';
+    if (key.startsWith('stars:')) chip.classList.add('stars-chip');
+    if (key === 'liked') chip.append(likedHeart(), ' ');
+    chip.append(chipLabel(key) + ' ');
+    const num = document.createElement('span');
+    num.className = 'count';
+    num.textContent = count;
+    chip.appendChild(num);
+    chip.addEventListener('click', () => toggleFilter(key));
+    return chip;
+  }
+
+  // Long groups (directors, eventually) show their top few plus whatever is
+  // active; "+ N more" opens the full list with a find box.
+  function updateGroupVisibility(group) {
+    const open = group.el.classList.contains('open');
+    const find = open ? group.find.value.trim().toLowerCase() : '';
+    let hiddenCount = 0;
+    group.chips.forEach(({ key, el }, i) => {
+      const visible = open
+        ? chipLabel(key).toLowerCase().includes(find)
+        : !group.more || i < GROUP_LIMIT || activeFilters.has(key);
+      el.hidden = !visible;
+      if (!open && !visible) hiddenCount++;
+    });
+    if (group.more) {
+      group.more.textContent = open ? 'show less' : '+ ' + hiddenCount + ' more';
+      group.more.hidden = !open && hiddenCount === 0;
+    }
+  }
+
+  const groupsBuilt = [];
+
+  function buildFilterPanel() {
+    const counts = {};
+    entries.forEach(e => e.keys.forEach(k => counts[k] = (counts[k] || 0) + 1));
+    const genres = new Set(), decades = new Set(), mine = new Set();
+    entries.forEach(({ film }) => {
+      [...(film.genres || []), ...(film.myGenres || [])].forEach(g => genres.add('tag:' + g));
+      (film.myTags || []).forEach(t => mine.add('tag:' + t));
+    });
+    Object.keys(counts).forEach(k => { if (/^tag:\d{4}s$/.test(k)) decades.add(k); });
+
+    const byCount = keys => [...keys].sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
+    const all = Object.keys(counts);
+    const groups = [
+      ['rating', all.filter(k => k.startsWith('stars:')).sort((a, b) => parseFloat(b.slice(6)) - parseFloat(a.slice(6)))],
+      ['liked', all.filter(k => k === 'liked')],
+      ['my tags', byCount(mine)],
+      ['genre', byCount(genres)],
+      ['decade', [...decades].sort().reverse()],
+      ['director', byCount(all.filter(k => k.startsWith('dir:')))],
+      ['cast', byCount(all.filter(k => k.startsWith('cast:')))]
+    ];
+
+    filterPanel.replaceChildren(...groups.filter(([, keys]) => keys.length).map(([name, keys]) => {
+      const el = document.createElement('div');
+      el.className = 'filter-group';
+      const label = document.createElement('span');
+      label.className = 'filter-group-name';
+      label.textContent = name;
+      const list = document.createElement('div');
+      list.className = 'filter-chips';
+
+      const group = { el, chips: [], more: null, find: null };
+      keys.forEach(key => {
+        keyGroup[key] = name;
+        const chip = makeChip(key, counts[key]);
+        chips.push({ key, el: chip });
+        group.chips.push({ key, el: chip });
+      });
+
+      // Rating and decade can never get long, so they always show in full.
+      if (keys.length > GROUP_LIMIT && name !== 'rating' && name !== 'decade') {
+        group.find = document.createElement('input');
+        group.find.type = 'search';
+        group.find.className = 'group-find';
+        group.find.placeholder = 'find ' + ({ director: 'a director', cast: 'an actor' }[name] || 'a ' + name.replace(/s$/, '')) + '\u2026';
+        group.find.setAttribute('aria-label', 'find in ' + name);
+        group.find.hidden = true;
+        group.find.addEventListener('input', () => updateGroupVisibility(group));
+
+        group.more = document.createElement('button');
+        group.more.className = 'chip-more';
+        group.more.addEventListener('click', () => {
+          const open = el.classList.toggle('open');
+          group.find.hidden = !open;
+          group.find.value = '';
+          updateGroupVisibility(group);
+          if (open) group.find.focus();
+        });
+        list.append(group.find, ...group.chips.map(c => c.el), group.more);
+      } else {
+        list.append(...group.chips.map(c => c.el));
+      }
+
+      groupsBuilt.push(group);
+      el.append(label, list);
+      return el;
+    }));
+  }
+
+  // While typing in the main search, offer matching directors/tags as
+  // one-click filters — the quick way to find one name in a long list.
+  function updateSuggestions() {
+    const query = filmSearch.value.trim().toLowerCase();
+    if (query.length < 2) {
+      filterSuggest.hidden = true;
+      return;
+    }
+    const counts = {};
+    entries.forEach(e => e.keys.forEach(k => counts[k] = (counts[k] || 0) + 1));
+    const matches = Object.keys(keyGroup)
+      .filter(k => /^(dir|tag|cast):/.test(k) && !activeFilters.has(k))
+      .filter(k => chipLabel(k).toLowerCase().includes(query))
+      .sort((a, b) => counts[b] - counts[a])
+      .slice(0, 6);
+    filterSuggest.hidden = !matches.length;
+    if (!matches.length) return;
+
+    const label = document.createElement('span');
+    label.className = 'label';
+    label.textContent = 'filter by:';
+    filterSuggest.replaceChildren(label, ...matches.map(key => {
+      const chip = makeChip(key, counts[key]);
+      const kind = document.createElement('span');
+      kind.className = 'kind';
+      kind.textContent = keyGroup[key] + ' ';
+      chip.prepend(kind);
+      chip.addEventListener('click', () => {
+        // The filter replaces the typed text, which was only used to find it.
+        filmSearch.value = '';
+        syncUrl();
+        applyFilters();
+      });
+      return chip;
+    }));
+  }
+
+  function renderStats() {
+    if (!entries.length) return;
+    const rated = entries.map(e => e.film.watches[0].rating).filter(r => r != null);
+    const average = rated.reduce((sum, r) => sum + r, 0) / (rated.length || 1);
+    // Films count once; hours count every watch, rewatches included.
+    const minutes = entries.reduce((sum, e) => sum + (e.film.runtime || 0) * e.film.watches.length, 0);
+    const stats = [
+      [entries.length, entries.length === 1 ? 'film' : 'films'],
+      [(minutes / 60).toFixed(minutes < 600 ? 1 : 0), 'hours watched'],
+      [average.toFixed(1) + '\u2605', 'average'],
+      [entries.filter(e => e.film.watches[0].liked).length, 'liked'],
+      [entries.filter(e => e.film.hasReview).length, 'written up']
+    ];
+    filmStats.replaceChildren(...stats.map(([value, label]) => {
+      const stat = document.createElement('span');
+      const num = document.createElement('b');
+      num.textContent = value;
+      stat.append(num, label);
+      return stat;
+    }));
+  }
+
+  // Home page: the most recent watch, with its Letterboxd take.
+  function renderLatest() {
+    const latest = entries[0];
+    if (!latest) return;
+    const { film, slug } = latest;
+    const watch = film.watches[0];
+
+    const link = document.createElement('a');
+    link.className = 'latest-watch';
+    link.href = filmUrl(slug);
+    if (film.poster) {
+      const img = document.createElement('img');
+      img.src = film.poster;
+      img.alt = film.title + ' poster';
+      link.appendChild(img);
+    }
+    const text = document.createElement('div');
+    const title = document.createElement('div');
+    title.className = 'latest-title';
+    title.textContent = film.title + ' ';
+    if (film.year) {
+      const year = document.createElement('span');
+      year.textContent = film.year;
+      title.appendChild(year);
+    }
+    const rating = document.createElement('div');
+    rating.className = 'stars';
+    rating.textContent = stars(watch.rating);
+    if (watch.liked) rating.appendChild(likedHeart());
+    text.append(title, rating);
+    if (watch.take && !watch.spoilers) {
+      const take = document.createElement('div');
+      take.className = 'latest-take';
+      take.innerHTML = watch.take;  // Letterboxd's own sanitized HTML
+      text.appendChild(take);
+    }
+    link.appendChild(text);
+
+    document.getElementById('latestWatch').replaceChildren(link);
+    document.getElementById('latestPanel').hidden = false;
+  }
+
+  filterToggle.addEventListener('click', () => {
+    filterPanel.hidden = !filterPanel.hidden;
+    filterToggle.setAttribute('aria-expanded', String(!filterPanel.hidden));
+  });
+
+  filmSort.addEventListener('change', () => {
+    try { localStorage.setItem(SORT_KEY, filmSort.value); } catch {}
+    syncUrl();
+    applyFilters();
+  });
+
+  showMore.addEventListener('click', () => {
+    limit += PAGE;
+    applyFilters(true);
+  });
+
+  filmSearch.addEventListener('input', () => {
+    syncUrl();
+    applyFilters();
+  });
+
+  fetch('data/films.json')
+    .then(res => res.json())
+    .then(films => {
+      entries = Object.entries(films)
+        .filter(([, film]) => film.listed)
+        .map(([slug, film], order) => ({
+          slug,
+          film,
+          order,
+          tile: null,
+          keys: filterKeys(film),
+          haystack: searchText(film)
+        }));
+      buildFilterPanel();
+      renderStats();
+      renderLatest();
+      // Arriving from a film page's tag link: show which filter is on.
+      if (activeFilters.size) {
+        filterPanel.hidden = false;
+        filterToggle.setAttribute('aria-expanded', 'true');
+      }
+      applyFilters();
+    })
+    .catch(() => {
+      filmStatus.textContent = '';
+      filmGrid.innerHTML = '<p>couldn\'t load films, try refreshing.</p>';
+    });
 </script>
 
 </body>
