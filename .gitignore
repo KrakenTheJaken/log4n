@@ -16,8 +16,9 @@ p.html
 # other
 later/
 oneko.png
-test.html
-# local-only review stuff (examples, formatting guide, drafts)
+__pycache__/
+
+# local-only review stuff (examples, formatting guide, drafts, notes)
 reviews/examples/
 reviews/drafts/
-__pycache__/
+reviews/README.md
