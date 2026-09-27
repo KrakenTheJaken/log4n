@@ -1,4 +1,72 @@
 {
+  "the-misfits": {
+    "title": "The Misfits",
+    "year": 1961,
+    "released": "1961-03-21",
+    "director": "John Huston",
+    "runtime": 124,
+    "cast": [
+      "Clark Gable",
+      "Marilyn Monroe",
+      "Montgomery Clift",
+      "Thelma Ritter"
+    ],
+    "genres": [
+      "western",
+      "romance",
+      "drama"
+    ],
+    "myGenres": [],
+    "myTags": [],
+    "tags": [
+      "western",
+      "romance",
+      "drama",
+      "1960s"
+    ],
+    "quote": null,
+    "tmdb": 11536,
+    "letterboxd": "https://letterboxd.com/film/the-misfits/",
+    "poster": "/data/posters/the-misfits.jpg",
+    "hasReview": false,
+    "listed": true,
+    "auto": {
+      "director": "John Huston",
+      "genres": [
+        "western",
+        "romance",
+        "drama"
+      ],
+      "cast": [
+        "Clark Gable",
+        "Marilyn Monroe",
+        "Montgomery Clift",
+        "Thelma Ritter",
+        "Eli Wallach",
+        "James Barton",
+        "Kevin McCarthy",
+        "Estelle Winwood",
+        "Rex Bell",
+        "John Huston",
+        "Peggy Barton",
+        "Ryall Bowker"
+      ],
+      "runtime": 124,
+      "released": "1961-03-21"
+    },
+    "watches": [
+      {
+        "id": "1512782310",
+        "date": "2026-09-26",
+        "rating": 3.0,
+        "liked": false,
+        "rewatch": false,
+        "spoilers": false,
+        "take": "<p>Men 🚬</p>",
+        "url": "https://letterboxd.com/xtrakitty/film/the-misfits/"
+      }
+    ]
+  },
   "the-invite-2026": {
     "title": "The Invite",
     "year": 2026,
