@@ -1,4 +1,72 @@
 {
+  "unabomber-2026": {
+    "title": "Unabomber",
+    "year": 2026,
+    "released": null,
+    "director": "Janus Metz",
+    "runtime": 101,
+    "cast": [
+      "Russell Crowe",
+      "Jacob Tremblay",
+      "Shailene Woodley",
+      "Annabelle Wallis"
+    ],
+    "genres": [
+      "crime",
+      "thriller",
+      "drama"
+    ],
+    "myGenres": [],
+    "myTags": [],
+    "tags": [
+      "crime",
+      "thriller",
+      "drama",
+      "2020s"
+    ],
+    "quote": null,
+    "tmdb": 1492640,
+    "letterboxd": "https://letterboxd.com/film/unabomber-2026/",
+    "poster": "/data/posters/unabomber-2026.jpg",
+    "hasReview": false,
+    "listed": true,
+    "auto": {
+      "director": "Janus Metz",
+      "genres": [
+        "crime",
+        "thriller",
+        "drama"
+      ],
+      "cast": [
+        "Russell Crowe",
+        "Jacob Tremblay",
+        "Shailene Woodley",
+        "Annabelle Wallis",
+        "Alexander Ludwig",
+        "Marc Menchaca",
+        "Steven Ogg",
+        "Mark Camacho",
+        "David Webster",
+        "Bruce Ramsay",
+        "Michelle Leblanc",
+        "Gus Halper"
+      ],
+      "runtime": 101,
+      "released": null
+    },
+    "watches": [
+      {
+        "id": "1514381748",
+        "date": "2026-09-27",
+        "rating": 2.0,
+        "liked": false,
+        "rewatch": false,
+        "spoilers": false,
+        "take": "<p>Was looking forward for this film for a little bit, but was quite disappointed.</p>",
+        "url": "https://letterboxd.com/xtrakitty/film/unabomber-2026/"
+      }
+    ]
+  },
   "the-misfits": {
     "title": "The Misfits",
     "year": 1961,
