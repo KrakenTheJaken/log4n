@@ -77,6 +77,77 @@
       }
     ]
   },
+  "in-the-heat-of-the-night": {
+    "title": "In the Heat of the Night",
+    "year": 1967,
+    "released": "1967-08-02",
+    "director": "Norman Jewison",
+    "runtime": 109,
+    "cast": [
+      "Sidney Poitier",
+      "Rod Steiger",
+      "Warren Oates",
+      "Peter Whitney"
+    ],
+    "genres": [
+      "mystery",
+      "crime",
+      "drama",
+      "thriller"
+    ],
+    "myGenres": [],
+    "myTags": [],
+    "tags": [
+      "mystery",
+      "crime",
+      "drama",
+      "thriller",
+      "1960s"
+    ],
+    "quote": null,
+    "tmdb": 10633,
+    "letterboxd": "https://letterboxd.com/film/in-the-heat-of-the-night/",
+    "poster": "/data/posters/in-the-heat-of-the-night.jpg",
+    "hasReview": false,
+    "listed": true,
+    "auto": {
+      "director": "Norman Jewison",
+      "genres": [
+        "mystery",
+        "crime",
+        "drama",
+        "thriller"
+      ],
+      "cast": [
+        "Sidney Poitier",
+        "Rod Steiger",
+        "Warren Oates",
+        "Peter Whitney",
+        "Lee Grant",
+        "Anthony James",
+        "William Schallert",
+        "Scott Wilson",
+        "Larry Gates",
+        "James Patterson",
+        "Quentin Dean",
+        "Kermit Murdock"
+      ],
+      "runtime": 109,
+      "released": "1967-08-02"
+    },
+    "watches": [
+      {
+        "id": "1516986066",
+        "date": "2026-09-29",
+        "rating": 4.5,
+        "liked": true,
+        "rewatch": false,
+        "spoilers": false,
+        "take": "<p>Don&#039;t have a longer review right now but great film !</p>",
+        "url": "https://letterboxd.com/xtrakitty/film/in-the-heat-of-the-night/"
+      }
+    ]
+  },
   "unabomber-2026": {
     "title": "Unabomber",
     "year": 2026,
