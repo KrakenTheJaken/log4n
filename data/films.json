@@ -1,4 +1,61 @@
 {
+  "jet-lag-the-game-japanorama-finale": {
+    "title": "Jet Lag: The Game — Japanorama Finale",
+    "year": 2026,
+    "released": null,
+    "director": null,
+    "runtime": null,
+    "cast": [
+      "Sam Denby",
+      "Adam Chase",
+      "Ben Doyle",
+      "Tom Scott"
+    ],
+    "genres": [
+      "comedy",
+      "adventure"
+    ],
+    "myGenres": [],
+    "myTags": [],
+    "tags": [
+      "comedy",
+      "adventure",
+      "2020s"
+    ],
+    "quote": null,
+    "tmdb": 1767753,
+    "letterboxd": "https://letterboxd.com/film/jet-lag-the-game-japanorama-finale/",
+    "poster": "/data/posters/jet-lag-the-game-japanorama-finale.jpg",
+    "hasReview": false,
+    "listed": true,
+    "auto": {
+      "director": null,
+      "genres": [
+        "comedy",
+        "adventure"
+      ],
+      "cast": [
+        "Sam Denby",
+        "Adam Chase",
+        "Ben Doyle",
+        "Tom Scott"
+      ],
+      "runtime": null,
+      "released": null
+    },
+    "watches": [
+      {
+        "id": "1522576089",
+        "date": "2026-10-03",
+        "rating": 5.0,
+        "liked": true,
+        "rewatch": false,
+        "spoilers": false,
+        "take": "<p>Best cinema experience i have ever had </p><p>deserved the standing ovation</p>",
+        "url": "https://letterboxd.com/xtrakitty/film/jet-lag-the-game-japanorama-finale/"
+      }
+    ]
+  },
   "the-misfits": {
     "title": "The Misfits",
     "year": 1961,
