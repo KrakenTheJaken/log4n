@@ -1,4 +1,69 @@
 {
+  "digger-2026": {
+    "title": "Digger",
+    "year": 2026,
+    "released": "2026-10-02",
+    "director": "Alejandro G. Iñárritu",
+    "runtime": 129,
+    "cast": [
+      "Tom Cruise",
+      "Riz Ahmed",
+      "John Goodman",
+      "Sandra Hüller"
+    ],
+    "genres": [
+      "drama",
+      "comedy"
+    ],
+    "myGenres": [],
+    "myTags": [],
+    "tags": [
+      "drama",
+      "comedy",
+      "2020s"
+    ],
+    "quote": null,
+    "tmdb": 1248832,
+    "letterboxd": "https://letterboxd.com/film/digger-2026/",
+    "poster": "/data/posters/digger-2026.jpg",
+    "hasReview": false,
+    "listed": true,
+    "auto": {
+      "director": "Alejandro G. Iñárritu",
+      "genres": [
+        "drama",
+        "comedy"
+      ],
+      "cast": [
+        "Tom Cruise",
+        "Riz Ahmed",
+        "John Goodman",
+        "Sandra Hüller",
+        "Michael Stuhlbarg",
+        "Jesse Plemons",
+        "Robert John Burke",
+        "Emma D'Arcy",
+        "Burn Gorman",
+        "Sophie Wilde",
+        "Danny Kirrane",
+        "Ross Hatt"
+      ],
+      "runtime": 129,
+      "released": "2026-10-02"
+    },
+    "watches": [
+      {
+        "id": "1525643121",
+        "date": "2026-10-05",
+        "rating": 5.0,
+        "liked": true,
+        "rewatch": false,
+        "spoilers": false,
+        "take": "<p>Oh. My. God.</p>",
+        "url": "https://letterboxd.com/xtrakitty/film/digger-2026/"
+      }
+    ]
+  },
   "jet-lag-the-game-japanorama-finale": {
     "title": "Jet Lag: The Game — Japanorama Finale",
     "year": 2026,
