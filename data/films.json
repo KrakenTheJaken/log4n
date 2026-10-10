@@ -273,7 +273,7 @@
   "unabomber-2026": {
     "title": "Unabomber",
     "year": 2026,
-    "released": null,
+    "released": "2026-09-25",
     "director": "Janus Metz",
     "runtime": 101,
     "cast": [
@@ -323,7 +323,7 @@
         "Gus Halper"
       ],
       "runtime": 101,
-      "released": null
+      "released": "2026-09-25"
     },
     "watches": [
       {
